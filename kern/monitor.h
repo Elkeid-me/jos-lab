@@ -1,3 +1,4 @@
+// clang-format off
 #ifndef JOS_KERN_MONITOR_H
 #define JOS_KERN_MONITOR_H
 #ifndef JOS_KERNEL
@@ -15,5 +16,10 @@ void monitor(struct Trapframe *tf);
 int mon_help(int argc, char **argv, struct Trapframe *tf);
 int mon_kerninfo(int argc, char **argv, struct Trapframe *tf);
 int mon_backtrace(int argc, char **argv, struct Trapframe *tf);
+// clang-format on
+int mon_color(int argc, char **argv, struct Trapframe *tf);
+int mon_show_map(int argc, char **argv, struct Trapframe *tf);
+int mon_set_permission(int argc, char **argv, struct Trapframe *tf);
+// clang-format off
 
 #endif	// !JOS_KERN_MONITOR_H

@@ -1,5 +1,5 @@
 /* See COPYRIGHT for copyright information. */
-
+// clang-format off
 #ifndef _CONSOLE_H_
 #define _CONSOLE_H_
 #ifndef JOS_KERNEL
@@ -16,7 +16,12 @@
 #define CRT_ROWS	25
 #define CRT_COLS	80
 #define CRT_SIZE	(CRT_ROWS * CRT_COLS)
-
+// clang-format on
+// Change color!
+#define DEFAULT_FG_COLOR 0x7
+#define DEFAULT_BG_COLOR 0x0
+// 乐（
+// clang-format off
 void cons_init(void);
 int cons_getc(void);
 
