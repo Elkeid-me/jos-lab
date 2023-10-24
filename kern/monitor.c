@@ -210,9 +210,9 @@ int mon_show_map(int argc, char **argv, struct Trapframe *tf)
     }
     extern pde_t *kern_pgdir;
     int is_enabled = is_large_page_enabled();
-    // 0x00000000 -> 0x00000000, Permission
-    //  V address -> P address   Permission K | R
-    cprintf("\n V address -> P address   Permission K | R\n");
+    // 0x00000000 -> 0x00000000, Permission:
+    //  V address -> P address   Permission: K | R
+    cprintf("\n V address -> P address   Permission: K | R\n");
     for (size_t i = start_ptr; i <= end_ptr; i += PGSIZE)
     {
         pde_t pde = kern_pgdir[PDX(i)];
@@ -258,8 +258,7 @@ int mon_show_map(int argc, char **argv, struct Trapframe *tf)
                 cprintf("%s\n", perm);
             }
             else
-                // cprintf("0x%08x -> not mapped\n", i);
-                ;
+                cprintf("0x%08x -> not mapped\n", i);
         }
     }
     return 0;
