@@ -21,10 +21,14 @@ struct Command {
 	int (*func)(int argc, char** argv, struct Trapframe* tf);
 };
 
+// clang-format on
+extern uint32_t fg_color, bg_color;
+
 static struct Command commands[] = {
-	{ "help", "Display this list of commands", mon_help },
-	{ "kerninfo", "Display information about the kernel", mon_kerninfo },
-};
+    {"help", "Display this list of commands", mon_help},
+    {"kerninfo", "Display information about the kernel", mon_kerninfo},
+    {"color", "Change color", mon_color}};
+// clang-format off
 
 /***** Implementations of basic kernel monitor commands *****/
 
@@ -74,6 +78,83 @@ int mon_backtrace(int argc, char **argv, struct Trapframe *tf)
                 debug_info.eip_fn_name, eip - debug_info.eip_fn_addr);
         ebp = (uint32_t *)(*ebp);
     }
+    return 0;
+}
+// clang-format off
+static int parse_color_arg(const char *arg)
+{
+    if (strlen(arg) != 1)
+        return -1;
+    switch (arg[0])
+    {
+    case '0': case '1': case '2': case '3':
+    case '4': case '5': case '6': case '7':
+    case '8': case '9':
+        return arg[0] - '0';
+
+    case 'a': case 'b': case 'c': case 'd':
+    case 'e': case 'f':
+        return arg[0] - 'a' + 10;
+
+    case 'A': case 'B': case 'C': case 'D':
+    case 'E': case 'F':
+        return arg[0] - 'A' + 10;
+
+    default:
+        return -1;
+    }
+}
+// clang-format on
+int mon_color(int argc, char **argv, struct Trapframe *tf)
+{
+    int m_bg_color = DEFAULT_BG_COLOR, m_fg_color = DEFAULT_FG_COLOR;
+    switch (argc)
+    {
+    case 1:
+        bg_color = m_bg_color;
+        fg_color = m_fg_color;
+        cprintf("Change color to default.\n");
+        break;
+
+    case 2:
+        m_fg_color = parse_color_arg(argv[1]);
+        if (m_fg_color >= 0)
+        {
+            if (m_fg_color == bg_color)
+                cprintf("Foreground and background color can NOT be same.\n");
+            else
+            {
+                fg_color = m_fg_color;
+                cprintf("Change foreground color to %s.\n", argv[1]);
+            }
+        }
+        else
+            cprintf("Parse args error: %s", argv[1]);
+        break;
+    case 3:
+        m_fg_color = parse_color_arg(argv[1]);
+        m_bg_color = parse_color_arg(argv[2]);
+        if (m_fg_color >= 0 && m_bg_color >= 0 && m_bg_color <= 0x7)
+        {
+            if (m_bg_color == m_fg_color)
+                cprintf("Foreground and background color can NOT be same.\n");
+            else
+            {
+                bg_color = m_bg_color;
+                fg_color = m_fg_color;
+                cprintf(
+                    "Change foreground color to %s, background color to %s.\n",
+                    argv[1], argv[2]);
+            }
+        }
+        else
+            cprintf("Parse args error: %s, %s\n", argv[1], argv[2]);
+        break;
+    default:
+        cprintf("Error\n");
+        break;
+    }
+
     return 0;
 }
 // clang-format off
