@@ -11,6 +11,8 @@
 #include <kern/monitor.h>
 #include <kern/kdebug.h>
 
+#include <kern/pmap.h>
+
 #define CMDBUF_SIZE	80	// enough for one VGA text line
 
 
@@ -27,7 +29,9 @@ extern uint32_t fg_color, bg_color;
 static struct Command commands[] = {
     {"help", "Display this list of commands", mon_help},
     {"kerninfo", "Display information about the kernel", mon_kerninfo},
-    {"color", "Change color", mon_color}};
+    {"color", "Change color", mon_color},
+    {"showmap", "Show mapping relation", mon_show_map},
+    {"setperm", "Set perm", mon_set_permission}};
 // clang-format off
 
 /***** Implementations of basic kernel monitor commands *****/
@@ -155,6 +159,205 @@ int mon_color(int argc, char **argv, struct Trapframe *tf)
         break;
     }
 
+    return 0;
+}
+
+static int is_large_page_enabled(void)
+{
+    uint32_t edx = 0;
+    uint32_t cr4 = rcr4();
+    cpuid(1, NULL, NULL, NULL, &edx);
+
+    int is_large_page_supported = (edx >> 3) & 1;
+    if (is_large_page_supported && (cr4 & CR4_PSE))
+        return 1;
+    else
+        return 0;
+}
+
+int mon_show_map(int argc, char **argv, struct Trapframe *tf)
+{
+    if (argc != 3)
+    {
+        cprintf("`showmap: invalid argc.\n");
+        return 0;
+    }
+
+    char *error_char = NULL;
+
+    uintptr_t start_ptr = strtol(argv[1], &error_char, 16);
+    if (*error_char != 0)
+    {
+        cprintf("`showmap: invalid arg: %s.\n", argv[1]);
+        return 0;
+    }
+
+    uintptr_t end_ptr = strtol(argv[2], &error_char, 16);
+    if (*error_char != 0)
+    {
+        cprintf("`showmap: invalid arg: %s.\n", argv[2]);
+        return 0;
+    }
+
+    start_ptr = ROUNDDOWN(start_ptr, PGSIZE);
+    end_ptr = ROUNDUP(end_ptr, PGSIZE);
+
+    if (start_ptr > end_ptr)
+    {
+        cprintf("Error");
+        return 0;
+    }
+    extern pde_t *kern_pgdir;
+    int is_enabled = is_large_page_enabled();
+    // 0x00000000 -> 0x00000000, Permission
+    //  V address -> P address   Permission K | R
+    cprintf("\n V address -> P address   Permission K | R\n");
+    for (size_t i = start_ptr; i <= end_ptr; i += PGSIZE)
+    {
+        pde_t pde = kern_pgdir[PDX(i)];
+        if (is_enabled && (pde & PTE_PS))
+        {
+            char perm[6] = "R-|--";
+
+            if ((pde & PTE_W) && !(pde & PTE_U))
+                perm[1] = 'W';
+            if ((pde & PTE_W) && (pde & PTE_U))
+            {
+                perm[1] = 'W';
+                perm[3] = 'R';
+                perm[4] = 'W';
+            }
+            if (!(pde & PTE_W) && (pde & PTE_U))
+                perm[3] = 'R';
+
+            cprintf("0x%08x -> 0x%08x, Permission: ", i,
+                    (pde & 0xffc00000) + (i & 0x3fffff));
+            cprintf("%s It's a large page\n", perm);
+        }
+        else
+        {
+            pte_t *pte_ptr = pgdir_walk(kern_pgdir, (void *)i, 0);
+            if (pte_ptr != NULL && (*pte_ptr & PTE_P))
+            {
+                char perm[6] = "R-|--";
+
+                if ((*pte_ptr & PTE_W) && !(*pte_ptr & PTE_U))
+                    perm[1] = 'W';
+                if ((*pte_ptr & PTE_W) && (*pte_ptr & PTE_U))
+                {
+                    perm[1] = 'W';
+                    perm[3] = 'R';
+                    perm[4] = 'W';
+                }
+                if (!(*pte_ptr & PTE_W) && (*pte_ptr & PTE_U))
+                    perm[3] = 'R';
+
+                cprintf("0x%08x -> 0x%08x, Permission: ", i,
+                        PTE_ADDR(*pte_ptr));
+                cprintf("%s\n", perm);
+            }
+            else
+                // cprintf("0x%08x -> not mapped\n", i);
+                ;
+        }
+    }
+    return 0;
+}
+
+int mon_set_permission(int argc, char **argv, struct Trapframe *tf)
+{
+    if (argc != 3)
+    {
+        cprintf("`setperm': invalid argc.\n");
+        return 0;
+    }
+
+    char *error_char = NULL;
+
+    uintptr_t ptr = strtol(argv[1], &error_char, 16);
+    if (*error_char != 0)
+    {
+        cprintf("`setperm': invalid arg: %s.\n", argv[1]);
+        return 0;
+    }
+
+    if (strlen(argv[2]) != 1)
+    {
+        cprintf("`setperm': invalid arg: %s.\n", argv[2]);
+        return 0;
+    }
+
+    ptr = ROUNDDOWN(ptr, PGSIZE);
+
+    extern pde_t *kern_pgdir;
+    int is_enabled = is_large_page_enabled();
+
+    pde_t *pde_ptr = &kern_pgdir[PDX(ptr)];
+    if (is_enabled && (*pde_ptr & PTE_PS))
+    {
+        ptr = PDX(ptr) << PDXSHIFT;
+        switch (argv[2][0])
+        {
+        case 'K':
+            *pde_ptr &= ~PTE_U;
+            cprintf("PTE_U on virtual address 0x%08x is disabled. It's a large "
+                    "page\n",
+                    ptr);
+            break;
+        case 'U':
+            *pde_ptr |= PTE_U;
+            cprintf("PTE_U on virtual address 0x%08x is enabled. It's a large "
+                    "page\n",
+                    ptr);
+            break;
+        case 'R':
+            *pde_ptr &= ~PTE_W;
+            cprintf("PTE_W on virtual address 0x%08x is disabled. It's a large "
+                    "page\n",
+                    ptr);
+            break;
+        case 'W':
+            cprintf("PTE_W on virtual address 0x%08x is enabled. It's a large "
+                    "page\n",
+                    ptr);
+            *pde_ptr |= PTE_W;
+            break;
+        default:
+            cprintf("`setperm': invalid arg: %s.\n", argv[2]);
+            return 0;
+        }
+    }
+    else
+    {
+        pte_t *pte_ptr = pgdir_walk(kern_pgdir, (void *)ptr, 0);
+        if (pte_ptr != NULL && (*pte_ptr & PTE_P))
+        {
+            switch (argv[2][0])
+            {
+            case 'K':
+                cprintf("PTE_U on virtual address 0x%08x is disabled.\n", ptr);
+                *pte_ptr &= ~PTE_U;
+                break;
+            case 'U':
+                cprintf("PTE_U on virtual address 0x%08x is enabled.\n", ptr);
+                *pte_ptr |= PTE_U;
+                break;
+            case 'R':
+                cprintf("PTE_W on virtual address 0x%08x is disabled.\n", ptr);
+                *pte_ptr &= ~PTE_W;
+                break;
+            case 'W':
+                cprintf("PTE_W on virtual address 0x%08x is enabled.\n", ptr);
+                *pte_ptr |= PTE_W;
+                break;
+            default:
+                cprintf("`setperm': invalid arg: %s.\n", argv[2]);
+                return 0;
+            }
+        }
+        else
+            cprintf("Virtual address 0x%08x is not mapped\n", ptr);
+    }
     return 0;
 }
 // clang-format off
