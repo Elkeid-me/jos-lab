@@ -1,6 +1,6 @@
 // Simple command-line kernel monitor useful for
 // controlling the kernel and exploring the system interactively.
-
+// clang-format off
 #include <inc/stdio.h>
 #include <inc/string.h>
 #include <inc/memlayout.h>
@@ -53,14 +53,30 @@ mon_kerninfo(int argc, char **argv, struct Trapframe *tf)
 		ROUNDUP(end - entry, 1024) / 1024);
 	return 0;
 }
-
-int
-mon_backtrace(int argc, char **argv, struct Trapframe *tf)
+// clang-format on
+int mon_backtrace(int argc, char **argv, struct Trapframe *tf)
 {
-	// Your code here.
-	return 0;
-}
+    struct Eipdebuginfo debug_info;
+    cprintf("Stack backtrace:\n");
 
+    uint32_t *ebp = (uint32_t *)read_ebp();
+    while ((uint32_t)ebp != 0)
+    {
+        uint32_t eip = *(ebp + 1), arg_1 = *(ebp + 2), arg_2 = *(ebp + 3),
+                 arg_3 = *(ebp + 4), arg_4 = *(ebp + 5), arg_5 = *(ebp + 6);
+        cprintf("  ebp %08x  eip %08x  args %08x %08x %08x %08x %08x\n", ebp,
+                eip, arg_1, arg_2, arg_3, arg_4, arg_5);
+
+        debuginfo_eip(eip, &debug_info);
+
+        cprintf("         %s:%d: %.*s+%d\n", debug_info.eip_file,
+                debug_info.eip_line, debug_info.eip_fn_namelen,
+                debug_info.eip_fn_name, eip - debug_info.eip_fn_addr);
+        ebp = (uint32_t *)(*ebp);
+    }
+    return 0;
+}
+// clang-format off
 
 
 /***** Kernel monitor command interpreter *****/

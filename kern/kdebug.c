@@ -1,3 +1,4 @@
+// clang-format off
 #include <inc/stab.h>
 #include <inc/string.h>
 #include <inc/memlayout.h>
@@ -179,7 +180,14 @@ debuginfo_eip(uintptr_t addr, struct Eipdebuginfo *info)
 	//	Look at the STABS documentation and <inc/stab.h> to find
 	//	which one.
 	// Your code here.
+    // clang-format on
+    stab_binsearch(stabs, &lline, &rline, N_SLINE, addr);
 
+    if (lline <= rline)
+        info->eip_line = lline;
+    else
+        info->eip_line = -1;
+    // clang-format off
 
 	// Search backwards from the line number for the relevant filename
 	// stab.
