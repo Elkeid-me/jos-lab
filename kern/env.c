@@ -1,5 +1,5 @@
 /* See COPYRIGHT for copyright information. */
-
+// clang-format off
 #include <inc/x86.h>
 #include <inc/mmu.h>
 #include <inc/error.h>
@@ -24,7 +24,7 @@ static struct Env *env_free_list;	// Free environment list
 // Set up global descriptor table (GDT) with separate segments for
 // kernel mode and user mode.  Segments serve many purposes on the x86.
 // We don't use any of their memory-mapping capabilities, but we need
-// them to switch privilege levels. 
+// them to switch privilege levels.
 //
 // The kernel and user segments are identical except for the DPL.
 // To load the SS register, the CPL must equal the DPL.  Thus,
@@ -110,16 +110,24 @@ envid2env(envid_t envid, struct Env **env_store, bool checkperm)
 // Make sure the environments are in the free list in the same order
 // they are in the envs array (i.e., so that the first call to
 // env_alloc() returns envs[0]).
-//
-void
-env_init(void)
+// clang-format on
+void env_init(void)
 {
-	// Set up envs array
-	// LAB 3: Your code here.
+    // Set up envs array
+    // LAB 3: Your code here.
 
-	// Per-CPU part of the initialization
-	env_init_percpu();
+    env_free_list = NULL;
+
+    for (size_t i = 0; i < NENV; i++)
+    {
+        envs[i].env_id = 0;
+        envs[i].env_link = env_free_list;
+        env_free_list = &envs[i];
+    }
+    // Per-CPU part of the initialization
+    env_init_percpu();
 }
+// clang-format off
 
 // Load GDT and segment descriptors.
 void
@@ -135,7 +143,7 @@ env_init_percpu(void)
 	asm volatile("movw %%ax,%%es" : : "a" (GD_KD));
 	asm volatile("movw %%ax,%%ds" : : "a" (GD_KD));
 	asm volatile("movw %%ax,%%ss" : : "a" (GD_KD));
-	// Load the kernel text segment into CS.
+	// Load the kernel text segment into CS. about `$1f', see https://www.spinics.net/lists/gcchelp/msg02986.html
 	asm volatile("ljmp %0,$1f\n 1:\n" : : "i" (GD_KT));
 	// For good measure, clear the local descriptor table (LDT),
 	// since we don't use it.
@@ -151,7 +159,7 @@ env_init_percpu(void)
 //
 // Returns 0 on success, < 0 on error.  Errors include:
 //	-E_NO_MEM if page directory or table could not be allocated.
-//
+// clang-format on
 static int
 env_setup_vm(struct Env *e)
 {
@@ -178,6 +186,8 @@ env_setup_vm(struct Env *e)
 	//	pp_ref for env_free to work correctly.
 	//    - The functions in kern/pmap.h are handy.
 
+    p->pp_ref++;
+    e->env_pgdir = page2kva(p);
 	// LAB 3: Your code here.
 
 	// UVPT maps the env's own page table read-only.
@@ -186,6 +196,7 @@ env_setup_vm(struct Env *e)
 
 	return 0;
 }
+// clang-format off
 
 //
 // Allocates and initializes a new environment.
@@ -363,7 +374,7 @@ env_free(struct Env *e)
 	cprintf("[%08x] free env %08x\n", curenv ? curenv->env_id : 0, e->env_id);
 
 	// Flush all mapped pages in the user portion of the address space
-	static_assert(UTOP % PTSIZE == 0);
+	_Static_assert(UTOP % PTSIZE == 0, "");
 	for (pdeno = 0; pdeno < PDX(UTOP); pdeno++) {
 
 		// only look at mapped page tables
