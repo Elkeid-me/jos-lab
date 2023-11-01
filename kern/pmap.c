@@ -114,7 +114,7 @@ static void *boot_alloc(uint32_t n)
     uint32_t expand_size = ROUNDUP(n, PGSIZE);
     if ((uint32_t)nextfree > (KERNBASE + PTSIZE) - expand_size)
     {
-        panic("boot_alloc: out of memory\n");
+        panic("`%s': out of memory\n", __func__);
         return NULL;
     }
     nextfree += expand_size;
@@ -196,6 +196,7 @@ mem_init(void)
 	//      (ie. perm = PTE_U | PTE_P)
 	//    - pages itself -- kernel RW, user NONE
 	// Your code goes here:
+	// 对 pages 本身的映射将在后续映射整个内核时进行
 	boot_map_region(kern_pgdir, UPAGES, PTSIZE, PADDR(pages), PTE_U);
 	//////////////////////////////////////////////////////////////////////
 	// Map the 'envs' array read-only by the user at linear address UENVS
@@ -204,6 +205,7 @@ mem_init(void)
 	//    - the new image at UENVS  -- kernel R, user R
 	//    - envs itself -- kernel RW, user NONE
 	// LAB 3: Your code here.
+	// 对 envs 本身的映射将在后续映射整个内核时进行
 	boot_map_region(kern_pgdir, UENVS, PTSIZE, PADDR(envs), PTE_U);
 
 	//////////////////////////////////////////////////////////////////////
