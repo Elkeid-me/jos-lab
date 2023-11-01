@@ -231,7 +231,7 @@ mem_init(void)
     uint32_t edx = 0;
     cpuid(1, NULL, NULL, NULL, &edx);
 
-    int is_large_page_supported = (edx >> 3) & 1;
+    int is_large_page_supported = 0; // (edx >> 3) & 1;
     if (is_large_page_supported)
     {
         uint32_t cr4 = rcr4();
