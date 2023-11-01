@@ -483,8 +483,9 @@ static void boot_map_region_large_page(pde_t *pgdir, uintptr_t va, size_t size,
     }
     else
     {
-        panic("Call `boot_map_region_large_page' when large page is not "
-              "enabled.\n");
+        panic("Call `%s' when large page is not "
+              "enabled.\n",
+              __func__);
     }
 }
 // clang-format off
