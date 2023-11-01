@@ -118,13 +118,13 @@ void env_init(void)
 
     env_free_list = NULL;
 
-    for (size_t i = 0; i < NENV; i++)
+    for (size_t i = NENV; i > 0; i--)
     {
-        envs[i].env_id = 0;
-        envs[i].env_link = env_free_list;
+        envs[i - 1].env_id = 0;
+        envs[i - 1].env_link = env_free_list;
         // envs[i].env_type = ENV_FREE;
-        envs[i].env_status = ENV_FREE;
-        env_free_list = &envs[i];
+        envs[i - 1].env_status = ENV_FREE;
+        env_free_list = &envs[i - 1];
     }
     // Per-CPU part of the initialization
     env_init_percpu();
@@ -280,7 +280,7 @@ static void region_alloc(struct Env *e, void *va, size_t len)
     //   'va' and 'len' values that are not page-aligned.
     //   You should round va down, and round (va + len) up.
     //   (Watch out for corner-cases!)
-    assert(-(uint32_t)len > (uint32_t)va);
+    assert((uint32_t)va + (uint32_t)len > (uint32_t)va);
     uintptr_t p_limit = ROUNDUP((uintptr_t)va + len, PGSIZE);
     uintptr_t p_down = ROUNDDOWN((uintptr_t)va, PGSIZE);
     uint32_t page_num = (p_limit - p_down) / PGSIZE;
@@ -357,7 +357,7 @@ static void load_icode(struct Env *e, uint8_t *binary)
     struct Proghdr *program_header_table_ptr =
         (struct Proghdr *)(binary + elf_header_ptr->e_phoff);
 
-    lcr3((uintptr_t)(e->env_pgdir));
+    lcr3(PADDR(e->env_pgdir));
     for (size_t i = 0; i < elf_header_ptr->e_phnum; i++)
     {
         struct Proghdr *program_header = program_header_table_ptr + i;
@@ -372,12 +372,15 @@ static void load_icode(struct Env *e, uint8_t *binary)
                 panic("`%s' error: `file_size' is larger than mem_size\n",
                       __func__);
             }
-            region_alloc(e, va, mem_size);
-            memset(va, 0, mem_size);
-            memcpy(va, binary + ph_off, file_size);
+            if (mem_size > 0)
+            {
+                region_alloc(e, va, mem_size);
+                memset(va, 0, mem_size);
+                memcpy(va, binary + ph_off, file_size);
+            }
         }
     }
-    lcr3((uintptr_t)kern_pgdir);
+    lcr3(PADDR(kern_pgdir));
     e->env_tf.tf_eip = elf_header_ptr->e_entry;
 
     // Now map one page for the program's initial stack
@@ -541,7 +544,7 @@ void env_run(struct Env *e)
     curenv = e;
     curenv->env_status = ENV_RUNNING;
     curenv->env_runs++;
-    lcr3((uintptr_t)(e->env_pgdir));
+    lcr3(PADDR(curenv->env_pgdir));
     env_pop_tf(&(curenv->env_tf));
     panic("env_run not yet implemented");
 }

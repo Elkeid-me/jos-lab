@@ -1,3 +1,4 @@
+// clang-format off
 #include <inc/mmu.h>
 #include <inc/x86.h>
 #include <inc/assert.h>
@@ -58,17 +59,17 @@ static const char *trapname(int trapno)
 	return "(unknown trap)";
 }
 
-
-void
-trap_init(void)
+// clang-format on
+void trap_init(void)
 {
-	extern struct Segdesc gdt[];
+    extern struct Segdesc gdt[];
 
-	// LAB 3: Your code here.
+    // LAB 3: Your code here.
 
-	// Per-CPU setup 
-	trap_init_percpu();
+    // Per-CPU setup
+    trap_init_percpu();
 }
+// clang-format off
 
 // Initialize and load the per-CPU TSS and IDT
 void
