@@ -104,6 +104,8 @@ void trap_init(void)
     DefAndSetGate(idt[T_ALIGN], 0, GD_KT, Alignment_Check_h, 0);
     DefAndSetGate(idt[T_MCHK], 0, GD_KT, Machine_Check_h, 0);
     DefAndSetGate(idt[T_SIMDERR], 0, GD_KT, SIMD_Floating_Point_Exception_h, 0);
+
+    DefAndSetGate(idt[T_SYSCALL], 0, GD_KT, System_Call_h, 3);
     // Per-CPU setup
     trap_init_percpu();
 }
@@ -183,26 +185,32 @@ static void trap_dispatch(struct Trapframe *tf)
 {
     // Handle processor exceptions.
     // LAB 3: Your code here.
-
     switch (tf->tf_trapno)
     {
     case T_PGFLT:
+        if ((tf->tf_cs & 3) == 0)
+            panic("Kernel panic with page fault\n");
         page_fault_handler(tf);
         return;
-        // return;
     case T_BRKPT:
         monitor(tf);
         return;
-	}
+    case T_SYSCALL:
+        tf->tf_regs.reg_eax = syscall(tf->tf_regs.reg_eax, tf->tf_regs.reg_edx,
+                                      tf->tf_regs.reg_ecx, tf->tf_regs.reg_ebx,
+                                      tf->tf_regs.reg_edi, tf->tf_regs.reg_esi);
+        env_run(curenv);
+    }
 
-	// Unexpected trap: The user process or the kernel has a bug.
-	print_trapframe(tf);
-	if (tf->tf_cs == GD_KT)
-		panic("unhandled trap in kernel");
-	else {
-		env_destroy(curenv);
-		return;
-	}
+    // Unexpected trap: The user process or the kernel has a bug.
+    print_trapframe(tf);
+    if (tf->tf_cs == GD_KT)
+        panic("unhandled trap in kernel");
+    else
+    {
+        env_destroy(curenv);
+        return;
+    }
 }
 // clang-format off
 

@@ -71,6 +71,7 @@ TRAPHANDLER_NOEC(x87_FPU_Floating_Point_Error_h, T_FPERR)
 TRAPHANDLER(Alignment_Check_h, T_ALIGN)
 TRAPHANDLER_NOEC(Machine_Check_h, T_MCHK)
 TRAPHANDLER_NOEC(SIMD_Floating_Point_Exception_h, T_SIMDERR)
+TRAPHANDLER_NOEC(System_Call_h, T_SYSCALL)
 
 
 

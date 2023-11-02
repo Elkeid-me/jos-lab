@@ -385,14 +385,6 @@ static void load_icode(struct Env *e, uint8_t *binary)
     // Now map one page for the program's initial stack
     // at virtual address USTACKTOP - PGSIZE.
     // LAB 3: Your code here.
-    // struct PageInfo *stack_page = page_alloc(ALLOC_ZERO);
-    // if (stack_page == NULL)
-    //     panic("`%s' error: Can not allocate a physical page.\n", __func__);
-    // stack_page->pp_ref++;
-    // int err = page_insert(e->env_pgdir, stack_page,
-    //                       (void *)(USTACKTOP - PGSIZE), PTE_W | PTE_U);
-    // if (err < 0)
-    //     panic("`%s' error: %e.\n", __func__, err);
 
     region_alloc(e, (void *)(USTACKTOP - PGSIZE), PGSIZE);
 }
