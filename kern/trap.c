@@ -1,4 +1,5 @@
 // clang-format off
+#include "inc/memlayout.h"
 #include <inc/mmu.h>
 #include <inc/x86.h>
 #include <inc/assert.h>
@@ -63,9 +64,46 @@ static const char *trapname(int trapno)
 void trap_init(void)
 {
     extern struct Segdesc gdt[];
-
     // LAB 3: Your code here.
+#define DefAndSetGate(gate, istrap, sel, func, dpl)                            \
+    void func();                                                               \
+    SETGATE(gate, istrap, sel, func, dpl)                                      \
+    {                                                                          \
+        (gate).gd_off_15_0 = (uint32_t)(func)&0xffff;                          \
+        (gate).gd_sel = (sel);                                                 \
+        (gate).gd_args = 0;                                                    \
+        (gate).gd_rsv1 = 0;                                                    \
+        (gate).gd_type = (istrap) ? STS_TG32 : STS_IG32;                       \
+        (gate).gd_s = 0;                                                       \
+        (gate).gd_dpl = (dpl);                                                 \
+        (gate).gd_p = 1;                                                       \
+        (gate).gd_off_31_16 = (uint32_t)(func) >> 16;                          \
+    }
 
+    DefAndSetGate(idt[T_DIVIDE], 0, GD_KT, Divide_Error_h, 0);
+    DefAndSetGate(idt[T_DEBUG], 0, GD_KT, Debug_Exception_h, 0);
+    DefAndSetGate(idt[T_NMI], 0, GD_KT, NMI_Interrupt_h, 0);
+    DefAndSetGate(idt[T_BRKPT], 0, GD_KT, Breakpoint_h, 3);
+
+    DefAndSetGate(idt[T_OFLOW], 0, GD_KT, Overflow_h, 0);
+    DefAndSetGate(idt[T_BOUND], 0, GD_KT, BOUND_Range_Exceeded_error_h, 0);
+    DefAndSetGate(idt[T_ILLOP], 0, GD_KT, Invalid_Opcode_h, 0);
+    DefAndSetGate(idt[T_DEVICE], 0, GD_KT, Device_Not_Available_h, 0);
+
+    DefAndSetGate(idt[T_DBLFLT], 0, GD_KT, Double_Fault_h, 0);
+    // 9 is reserved by Intel.
+    DefAndSetGate(idt[T_TSS], 0, GD_KT, Invalid_TSS_h, 0);
+    DefAndSetGate(idt[T_SEGNP], 0, GD_KT, Segment_Not_Present_h, 0);
+
+    DefAndSetGate(idt[T_STACK], 0, GD_KT, Stack_Segment_Fault_h, 0);
+    DefAndSetGate(idt[T_GPFLT], 0, GD_KT, General_Protection_h, 0);
+    DefAndSetGate(idt[T_PGFLT], 0, GD_KT, Page_Fault_h, 0);
+    // 15 is reserved by Intel.
+
+    DefAndSetGate(idt[T_FPERR], 0, GD_KT, x87_FPU_Floating_Point_Error_h, 0);
+    DefAndSetGate(idt[T_ALIGN], 0, GD_KT, Alignment_Check_h, 0);
+    DefAndSetGate(idt[T_MCHK], 0, GD_KT, Machine_Check_h, 0);
+    DefAndSetGate(idt[T_SIMDERR], 0, GD_KT, SIMD_Floating_Point_Exception_h, 0);
     // Per-CPU setup
     trap_init_percpu();
 }
@@ -140,11 +178,22 @@ print_regs(struct PushRegs *regs)
 	cprintf("  eax  0x%08x\n", regs->reg_eax);
 }
 
-static void
-trap_dispatch(struct Trapframe *tf)
+// clang-format on
+static void trap_dispatch(struct Trapframe *tf)
 {
-	// Handle processor exceptions.
-	// LAB 3: Your code here.
+    // Handle processor exceptions.
+    // LAB 3: Your code here.
+
+    switch (tf->tf_trapno)
+    {
+    case T_PGFLT:
+        page_fault_handler(tf);
+        return;
+        // return;
+    case T_BRKPT:
+        monitor(tf);
+        return;
+	}
 
 	// Unexpected trap: The user process or the kernel has a bug.
 	print_trapframe(tf);
@@ -155,6 +204,7 @@ trap_dispatch(struct Trapframe *tf)
 		return;
 	}
 }
+// clang-format off
 
 void
 trap(struct Trapframe *tf)

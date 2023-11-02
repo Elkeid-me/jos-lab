@@ -118,13 +118,12 @@ void env_init(void)
 
     env_free_list = NULL;
 
-    for (size_t i = NENV; i > 0; i--)
+    for (int i = NENV - 1; i >= 0; i--)
     {
-        envs[i - 1].env_id = 0;
-        envs[i - 1].env_link = env_free_list;
-        // envs[i].env_type = ENV_FREE;
-        envs[i - 1].env_status = ENV_FREE;
-        env_free_list = &envs[i - 1];
+        envs[i].env_id = 0;
+        envs[i].env_link = env_free_list;
+        envs[i].env_status = ENV_FREE;
+        env_free_list = &envs[i];
     }
     // Per-CPU part of the initialization
     env_init_percpu();
@@ -546,6 +545,6 @@ void env_run(struct Env *e)
     curenv->env_runs++;
     lcr3(PADDR(curenv->env_pgdir));
     env_pop_tf(&(curenv->env_tf));
-    panic("env_run not yet implemented");
+    // panic("env_run not yet implemented");
 }
 // clang-format off

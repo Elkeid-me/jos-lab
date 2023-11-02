@@ -620,14 +620,23 @@ static uintptr_t user_mem_check_addr;
 //
 // Returns 0 if the user program can access this range of addresses,
 // and -E_FAULT otherwise.
-//
-int
-user_mem_check(struct Env *env, const void *va, size_t len, int perm)
+// clang-format on
+int user_mem_check(struct Env *env, const void *va, size_t len, int perm)
 {
-	// LAB 3: Your code here.
+    // LAB 3: Your code here.
+    perm |= PTE_P;
+    for (size_t i = 0; i < len; i++)
+    {
+        pte_t *pte_ptr = pgdir_walk(env->env_pgdir, va, 0);
+        if (pte_ptr == NULL)
+            return -E_FAULT;
+        if ((*pte_ptr & perm) != perm)
+            return -E_FAULT;
+    }
 
-	return 0;
+    return 0;
 }
+// clang-format off
 
 //
 // Checks that environment 'env' is allowed to access the range
