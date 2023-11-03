@@ -27,13 +27,23 @@ struct Command {
 // clang-format on
 extern uint32_t fg_color, bg_color;
 
+// clang-format on
+int mon_color(int argc, char **argv, struct Trapframe *tf);
+int mon_show_map(int argc, char **argv, struct Trapframe *tf);
+int mon_set_permission(int argc, char **argv, struct Trapframe *tf);
+int mon_single_instruction(int argc, char **argv, struct Trapframe *tf);
+int mon_continue(int argc, char **argv, struct Trapframe *tf);
+// clang-format off
+
 static struct Command commands[] = {
     {"help", "Display this list of commands", mon_help},
     {"kerninfo", "Display information about the kernel", mon_kerninfo},
     {"backtrace", "Backtrace the stack", mon_backtrace},
     {"color", "Change color", mon_color},
     {"showmap", "Show mapping relation", mon_show_map},
-    {"setperm", "Set perm", mon_set_permission}};
+    {"setperm", "Set perm", mon_set_permission},
+    {"si", "Run single instruction and then break", mon_single_instruction},
+    {"c","Continue to run", mon_continue}};
 // clang-format off
 
 /***** Implementations of basic kernel monitor commands *****/
@@ -359,6 +369,38 @@ int mon_set_permission(int argc, char **argv, struct Trapframe *tf)
         else
             cprintf("Virtual address 0x%08x is not mapped\n", ptr);
     }
+    return 0;
+}
+
+int mon_single_instruction(int argc, char **argv, struct Trapframe *tf)
+{
+    if (tf != NULL && (tf->tf_trapno == T_DEBUG || tf->tf_trapno == T_BRKPT) &&
+        (tf->tf_cs & 3) == 3)
+    {
+        void env_run(struct Env * e);
+        extern struct Env *curenv;
+
+        tf->tf_eflags |= FL_TF | FL_RF;
+        env_run(curenv);
+    }
+
+    cprintf("Nothing running\n");
+    return 0;
+}
+
+int mon_continue(int argc, char **argv, struct Trapframe *tf)
+{
+    if (tf != NULL && (tf->tf_trapno == T_DEBUG || tf->tf_trapno == T_BRKPT) &&
+        (tf->tf_cs & 3) == 3)
+    {
+        void env_run(struct Env * e);
+        extern struct Env *curenv;
+
+        tf->tf_eflags &= ~(FL_TF | FL_RF);
+        env_run(curenv);
+    }
+
+    cprintf("Nothing running\n");
     return 0;
 }
 // clang-format off

@@ -187,13 +187,15 @@ static void trap_dispatch(struct Trapframe *tf)
     // LAB 3: Your code here.
     switch (tf->tf_trapno)
     {
+    case T_DEBUG:
+    case T_BRKPT:
+        monitor(tf);
+        env_run(curenv);
+        return;
     case T_PGFLT:
         if ((tf->tf_cs & 3) == 0)
             panic("Kernel panic with page fault\n");
         page_fault_handler(tf);
-        return;
-    case T_BRKPT:
-        monitor(tf);
         return;
     case T_SYSCALL:
         tf->tf_regs.reg_eax = syscall(tf->tf_regs.reg_eax, tf->tf_regs.reg_edx,
