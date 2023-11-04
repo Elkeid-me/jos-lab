@@ -163,7 +163,6 @@ env_init_percpu(void)
 // clang-format on
 static int env_setup_vm(struct Env *e)
 {
-    int i;
     struct PageInfo *p = NULL;
 
     // Allocate a page for the page directory
@@ -279,8 +278,7 @@ static void region_alloc(struct Env *e, void *va, size_t len)
     //   'va' and 'len' values that are not page-aligned.
     //   You should round va down, and round (va + len) up.
     //   (Watch out for corner-cases!)
-    if (len == 0)
-        return;
+    assert(len != 0);
     assert((uint32_t)va + (uint32_t)len <= UTOP);
     assert((uint32_t)va + (uint32_t)len > (uint32_t)va);
     uintptr_t p_limit = ROUNDUP((uintptr_t)va + len, PGSIZE);
@@ -288,10 +286,10 @@ static void region_alloc(struct Env *e, void *va, size_t len)
     uint32_t page_num = (p_limit - p_down) / PGSIZE;
     for (uint32_t i = 0; i < page_num; i++)
     {
-        struct PageInfo *pginfo = page_alloc(0);
-        if (pginfo == NULL)
+        struct PageInfo *pginfo_ptr = page_alloc(0);
+        if (pginfo_ptr == NULL)
             panic("`%s' error: Can not allocate a physical page.\n", __func__);
-        int err = page_insert(e->env_pgdir, pginfo,
+        int err = page_insert(e->env_pgdir, pginfo_ptr,
                               (void *)(p_down + i * PGSIZE), PTE_U | PTE_W);
         if (err < 0)
             panic("`%s' error: %e\n", __func__, err);
@@ -371,7 +369,7 @@ static void load_icode(struct Env *e, uint8_t *binary)
             size_t ph_off = program_header->p_offset;
             if (file_size > mem_size)
             {
-                panic("`%s' error: `file_size' is larger than mem_size\n",
+                panic("`%s' error: `filesz' is larger than `memsz'.\n",
                       __func__);
             }
             if (mem_size > 0)
@@ -408,6 +406,7 @@ void env_create(uint8_t *binary, enum EnvType type)
     if (err < 0)
         panic("`%s' error: %e\n", __func__, err);
     load_icode(new_env, binary);
+    new_env->env_parent_id = 0;
     new_env->env_type = type;
 }
 // clang-format off
@@ -540,6 +539,5 @@ void env_run(struct Env *e)
     curenv->env_runs++;
     lcr3(PADDR(curenv->env_pgdir));
     env_pop_tf(&(curenv->env_tf));
-    // panic("env_run not yet implemented");
 }
 // clang-format off
