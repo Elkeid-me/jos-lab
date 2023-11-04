@@ -31,8 +31,8 @@ extern uint32_t fg_color, bg_color;
 int mon_color(int argc, char **argv, struct Trapframe *tf);
 int mon_show_map(int argc, char **argv, struct Trapframe *tf);
 int mon_set_permission(int argc, char **argv, struct Trapframe *tf);
-int mon_single_instruction(int argc, char **argv, struct Trapframe *tf);
-int mon_continue(int argc, char **argv, struct Trapframe *tf);
+int mon_si(int argc, char **argv, struct Trapframe *tf);
+int mon_c(int argc, char **argv, struct Trapframe *tf);
 // clang-format off
 
 static struct Command commands[] = {
@@ -42,8 +42,8 @@ static struct Command commands[] = {
     {"color", "Change color", mon_color},
     {"showmap", "Show mapping relation", mon_show_map},
     {"setperm", "Set perm", mon_set_permission},
-    {"si", "Run single instruction and then break", mon_single_instruction},
-    {"c","Continue to run", mon_continue}};
+    {"si", "Run single instruction and then break", mon_si},
+    {"c","Continue to run", mon_c}};
 // clang-format off
 
 /***** Implementations of basic kernel monitor commands *****/
@@ -372,15 +372,14 @@ int mon_set_permission(int argc, char **argv, struct Trapframe *tf)
     return 0;
 }
 
-int mon_single_instruction(int argc, char **argv, struct Trapframe *tf)
+int mon_si(int argc, char **argv, struct Trapframe *tf)
 {
     if (tf != NULL && (tf->tf_trapno == T_DEBUG || tf->tf_trapno == T_BRKPT) &&
         (tf->tf_cs & 3) == 3)
     {
         void env_run(struct Env * e);
         extern struct Env *curenv;
-
-        tf->tf_eflags |= FL_TF | FL_RF;
+        tf->tf_eflags |= FL_TF;
         env_run(curenv);
     }
 
@@ -388,7 +387,7 @@ int mon_single_instruction(int argc, char **argv, struct Trapframe *tf)
     return 0;
 }
 
-int mon_continue(int argc, char **argv, struct Trapframe *tf)
+int mon_c(int argc, char **argv, struct Trapframe *tf)
 {
     if (tf != NULL && (tf->tf_trapno == T_DEBUG || tf->tf_trapno == T_BRKPT) &&
         (tf->tf_cs & 3) == 3)
@@ -396,7 +395,7 @@ int mon_continue(int argc, char **argv, struct Trapframe *tf)
         void env_run(struct Env * e);
         extern struct Env *curenv;
 
-        tf->tf_eflags &= ~(FL_TF | FL_RF);
+        tf->tf_eflags &= ~FL_TF;
         env_run(curenv);
     }
 
