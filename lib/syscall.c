@@ -27,9 +27,9 @@ static inline int32_t syscall(int num, int check, uint32_t a1, uint32_t a2,
     case SYS_env_destroy:
         asm volatile("pushl %%ebp\n"
                      "movl %%esp, %%ebp\n"
-                     "leal 1f, %%esi\n"
+                     "leal 114514f, %%esi\n"
                      "sysenter\n"
-                     "1:\n"
+                     "114514:\n"
                      "popl %%ebp\n"
                      : "=a"(ret)
                      : "a"(num), "d"(a1), "c"(a2), "b"(a3), "D"(a4)
