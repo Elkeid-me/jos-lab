@@ -628,23 +628,38 @@ int user_mem_check(struct Env *env, const void *va, size_t len, int perm)
     uintptr_t va_start = ROUNDDOWN((uintptr_t)va, PGSIZE);
     uintptr_t va_end = ROUNDUP((uintptr_t)va + len, PGSIZE);
 
+    // 检查是否溢出
     if (va_end < va_start || va_end > ULIM)
     {
         user_mem_check_addr = MAX(ULIM, (uintptr_t)va);
         return -E_FAULT;
     }
 
-    for (uintptr_t va_2 = va_start; va_2 < va_end; va_2 += PGSIZE)
+    // 检查第一个页
+    pte_t *pte_ptr = pgdir_walk(env->env_pgdir, va, 0);
+    if (pte_ptr == NULL)
+    {
+        user_mem_check_addr = (uintptr_t)va;
+        return -E_FAULT;
+    }
+    if ((*pte_ptr & perm) != perm)
+    {
+        user_mem_check_addr = (uintptr_t)va;
+        return -E_FAULT;
+    }
+
+    // 从第二个页开始检查
+    for (uintptr_t va_2 = va_start + PGSIZE; va_2 < va_end; va_2 += PGSIZE)
     {
         pte_t *pte_ptr = pgdir_walk(env->env_pgdir, (void *)va_2, 0);
         if (pte_ptr == NULL)
         {
-            user_mem_check_addr = MAX(va_2, (uintptr_t)va);
+            user_mem_check_addr = va_2;
             return -E_FAULT;
         }
         if ((*pte_ptr & perm) != perm)
         {
-            user_mem_check_addr = MAX(va_2, (uintptr_t)va);
+            user_mem_check_addr = va_2;
             return -E_FAULT;
         }
     }
