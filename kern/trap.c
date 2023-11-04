@@ -193,8 +193,6 @@ static void trap_dispatch(struct Trapframe *tf)
         env_run(curenv);
         return;
     case T_PGFLT:
-        if ((tf->tf_cs & 3) == 0)
-            panic("Kernel panic with page fault\n");
         page_fault_handler(tf);
         return;
     case T_SYSCALL:
@@ -266,7 +264,8 @@ page_fault_handler(struct Trapframe *tf)
 	// Handle kernel-mode page faults.
 
 	// LAB 3: Your code here.
-
+	if ((tf->tf_cs & 3) == 0)
+		panic("Kernel panic with page fault\n");
 	// We've already handled kernel-mode exceptions, so if we get here,
 	// the page fault happened in user mode.
 
