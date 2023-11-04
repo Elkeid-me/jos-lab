@@ -190,7 +190,6 @@ static void trap_dispatch(struct Trapframe *tf)
     case T_DEBUG:
     case T_BRKPT:
         monitor(tf);
-        env_run(curenv);
         return;
     case T_PGFLT:
         page_fault_handler(tf);
