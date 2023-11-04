@@ -66,19 +66,8 @@ void trap_init(void)
     extern struct Segdesc gdt[];
     // LAB 3: Your code here.
 #define DefAndSetGate(gate, istrap, sel, func, dpl)                            \
-    extern void func();                                                        \
-    SETGATE(gate, istrap, sel, func, dpl)                                      \
-    {                                                                          \
-        (gate).gd_off_15_0 = (uint32_t)(func)&0xffff;                          \
-        (gate).gd_sel = (sel);                                                 \
-        (gate).gd_args = 0;                                                    \
-        (gate).gd_rsv1 = 0;                                                    \
-        (gate).gd_type = (istrap) ? STS_TG32 : STS_IG32;                       \
-        (gate).gd_s = 0;                                                       \
-        (gate).gd_dpl = (dpl);                                                 \
-        (gate).gd_p = 1;                                                       \
-        (gate).gd_off_31_16 = (uint32_t)(func) >> 16;                          \
-    }
+    void func();                                                               \
+    SETGATE(gate, istrap, sel, func, dpl)
 
     DefAndSetGate(idt[T_DIVIDE], 0, GD_KT, Divide_Error_h, 0);
     DefAndSetGate(idt[T_DEBUG], 0, GD_KT, Debug_Exception_h, 0);
@@ -110,7 +99,7 @@ void trap_init(void)
 #define IA32_SYSENTER_CS 0x174
 #define IA32_SYSENTER_ESP 0x175
 #define IA32_SYSENTER_EIP 0x176
-    extern void fast_system_call();
+    void fast_system_call();
     asm volatile("wrmsr" : : "c"(IA32_SYSENTER_CS), "d"(0), "a"(GD_KT));
     asm volatile("wrmsr" : : "c"(IA32_SYSENTER_ESP), "d"(0), "a"(KSTACKTOP));
     asm volatile("wrmsr"
