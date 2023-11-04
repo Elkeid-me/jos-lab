@@ -76,8 +76,7 @@ TRAPHANDLER_NOEC(System_Call_h, T_SYSCALL)
 .type fast_system_call, @function
 .align 2
 fast_system_call:
-
-	pushl   $0
+	pushl	$0
 	pushl	%edi
 	pushl	%ebx
 	pushl	%ecx
@@ -86,8 +85,8 @@ fast_system_call:
 
 	call	syscall
 
-	movl	%esi, %edx
-	movl	%ebp, %ecx
+	movl	%esi,	%edx
+	movl	%ebp,	%ecx
 	sysexit
 
 
@@ -106,10 +105,9 @@ _alltraps:
 
 	xorl	%eax,	%eax
 
-	movw	$GD_KD, %ax
+	movw	$GD_KD,	%ax
 	movw	%ax,	%ds
 	movw	%ax,	%es
 
 	pushl	%esp
 	call	trap
-
