@@ -5,7 +5,6 @@
 #include <inc/trap.h>
 
 
-
 ###################################################################
 # exceptions/interrupts
 ###################################################################
@@ -73,6 +72,23 @@ TRAPHANDLER_NOEC(Machine_Check_h, T_MCHK)
 TRAPHANDLER_NOEC(SIMD_Floating_Point_Exception_h, T_SIMDERR)
 TRAPHANDLER_NOEC(System_Call_h, T_SYSCALL)
 
+.global fast_system_call
+.type fast_system_call, @function
+.align 2
+fast_system_call:
+
+	pushl   $0
+	pushl	%edi
+	pushl	%ebx
+	pushl	%ecx
+	pushl	%edx
+	pushl	%eax
+
+	call	syscall
+
+	movl	%esi, %edx
+	movl	%ebp, %ecx
+	sysexit
 
 
 /*
@@ -80,20 +96,20 @@ TRAPHANDLER_NOEC(System_Call_h, T_SYSCALL)
  */
 
 _alltraps:
-    pushw   $0
-    pushw   %ds
+	pushw	$0
+	pushw	%ds
 
-	pushw   $0
-    pushw   %es
+	pushw	$0
+	pushw	%es
 
-    pushal
+	pushal
 
-    xorl    %eax,   %eax
+	xorl	%eax,	%eax
 
-    movw    $GD_KD, %ax
-    movw    %ax,    %ds
-    movw    %ax,    %es
+	movw	$GD_KD, %ax
+	movw	%ax,	%ds
+	movw	%ax,	%es
 
-    pushl   %esp
-    call    trap
+	pushl	%esp
+	call	trap
 

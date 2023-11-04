@@ -279,8 +279,10 @@ static void region_alloc(struct Env *e, void *va, size_t len)
     //   'va' and 'len' values that are not page-aligned.
     //   You should round va down, and round (va + len) up.
     //   (Watch out for corner-cases!)
+    if (len == 0)
+        return;
+    assert((uint32_t)va + (uint32_t)len <= UTOP);
     assert((uint32_t)va + (uint32_t)len > (uint32_t)va);
-    assert((uint32_t)va + (uint32_t)len < UTOP);
     uintptr_t p_limit = ROUNDUP((uintptr_t)va + len, PGSIZE);
     uintptr_t p_down = ROUNDDOWN((uintptr_t)va, PGSIZE);
     uint32_t page_num = (p_limit - p_down) / PGSIZE;

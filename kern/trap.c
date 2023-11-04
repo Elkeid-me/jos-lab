@@ -66,7 +66,7 @@ void trap_init(void)
     extern struct Segdesc gdt[];
     // LAB 3: Your code here.
 #define DefAndSetGate(gate, istrap, sel, func, dpl)                            \
-    void func();                                                               \
+    extern void func();                                                        \
     SETGATE(gate, istrap, sel, func, dpl)                                      \
     {                                                                          \
         (gate).gd_off_15_0 = (uint32_t)(func)&0xffff;                          \
@@ -106,6 +106,17 @@ void trap_init(void)
     DefAndSetGate(idt[T_SIMDERR], 0, GD_KT, SIMD_Floating_Point_Exception_h, 0);
 
     DefAndSetGate(idt[T_SYSCALL], 0, GD_KT, System_Call_h, 3);
+
+#define IA32_SYSENTER_CS 0x174
+#define IA32_SYSENTER_ESP 0x175
+#define IA32_SYSENTER_EIP 0x176
+    extern void fast_system_call();
+    asm volatile("wrmsr" : : "c"(IA32_SYSENTER_CS), "d"(0), "a"(GD_KT));
+    asm volatile("wrmsr" : : "c"(IA32_SYSENTER_ESP), "d"(0), "a"(KSTACKTOP));
+    asm volatile("wrmsr"
+                 :
+                 : "c"(IA32_SYSENTER_EIP), "d"(0), "a"(fast_system_call));
+
     // Per-CPU setup
     trap_init_percpu();
 }

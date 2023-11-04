@@ -25,11 +25,16 @@ static inline int32_t syscall(int num, int check, uint32_t a1, uint32_t a2,
     case SYS_cgetc:
     case SYS_getenvid:
     case SYS_env_destroy:
-        // asm volatile("sysenter\n"
-        //              "1:\n"
-        //              : "=a"(ret)
-        //              : "a"(num), "d"(a1), "c"(a2), "b"(a3), "D"(a4));
-        // break;
+        asm volatile("pushl %%ebp\n"
+                     "movl %%esp, %%ebp\n"
+                     "leal 1f, %%esi\n"
+                     "sysenter\n"
+                     "1:\n"
+                     "popl %%ebp\n"
+                     : "=a"(ret)
+                     : "a"(num), "d"(a1), "c"(a2), "b"(a3), "D"(a4)
+                     : "%esi");
+        break;
     default:
         asm volatile("int %1\n"
                      : "=a"(ret)
