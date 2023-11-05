@@ -74,8 +74,8 @@ void trap_init(void)
     DefAndSetGate(idt[T_NMI], 0, GD_KT, NMI_Interrupt_h, 0);
     DefAndSetGate(idt[T_BRKPT], 0, GD_KT, Breakpoint_h, 3);
 
-    DefAndSetGate(idt[T_OFLOW], 0, GD_KT, Overflow_h, 0);
-    DefAndSetGate(idt[T_BOUND], 0, GD_KT, BOUND_Range_Exceeded_error_h, 0);
+    DefAndSetGate(idt[T_OFLOW], 0, GD_KT, Overflow_h, 3);
+    DefAndSetGate(idt[T_BOUND], 0, GD_KT, BOUND_Range_Exceeded_error_h, 3);
     DefAndSetGate(idt[T_ILLOP], 0, GD_KT, Invalid_Opcode_h, 0);
     DefAndSetGate(idt[T_DEVICE], 0, GD_KT, Device_Not_Available_h, 0);
 
