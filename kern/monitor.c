@@ -40,8 +40,8 @@ static struct Command commands[] = {
     {"kerninfo", "Display information about the kernel", mon_kerninfo},
     {"backtrace", "Backtrace the stack", mon_backtrace},
     {"color", "Change color", mon_color},
-    {"showmap", "Show mapping relation", mon_show_map},
-    {"setperm", "Set perm", mon_set_permission},
+    // {"showmap", "Show mapping relation. DO NOT use it when enable large page.", mon_show_map},
+    // {"setperm", "Set perm. DO NOT use it when enable large page.", mon_set_permission},
     {"si", "Run single instruction and then break", mon_si},
     {"c","Continue to run", mon_c}};
 // clang-format off
@@ -187,190 +187,142 @@ static int is_large_page_enabled(void)
         return 0;
 }
 
-int mon_show_map(int argc, char **argv, struct Trapframe *tf)
-{
-    if (argc != 3)
-    {
-        cprintf("`showmap: invalid argc.\n");
-        return 0;
-    }
+// int mon_show_map(int argc, char **argv, struct Trapframe *tf)
+// {
+//     if (argc == 2)
+//     {
+//         argv[3] = argv[2];
+//         argc = 3;
+//     }
 
-    char *error_char = NULL;
+//     if (argc != 3)
+//     {
+//         cprintf("`%s': invalid argc.\n", __func__);
+//         return 0;
+//     }
 
-    uintptr_t start_ptr = strtol(argv[1], &error_char, 16);
-    if (*error_char != 0)
-    {
-        cprintf("`showmap: invalid arg: %s.\n", argv[1]);
-        return 0;
-    }
+//     char *error_char = NULL;
 
-    uintptr_t end_ptr = strtol(argv[2], &error_char, 16);
-    if (*error_char != 0)
-    {
-        cprintf("`showmap: invalid arg: %s.\n", argv[2]);
-        return 0;
-    }
+//     uintptr_t start_ptr = strtol(argv[1], &error_char, 16);
+//     if (*error_char != 0)
+//     {
+//         cprintf("`%s': invalid arg: %s.\n", __func__, argv[1]);
+//         return 0;
+//     }
 
-    start_ptr = ROUNDDOWN(start_ptr, PGSIZE);
-    end_ptr = ROUNDUP(end_ptr, PGSIZE);
+//     uintptr_t end_ptr = strtol(argv[2], &error_char, 16);
+//     if (*error_char != 0)
+//     {
+//         cprintf("`%s': invalid arg: %s.\n", __func__, argv[2]);
+//         return 0;
+//     }
 
-    if (start_ptr > end_ptr)
-    {
-        cprintf("Error");
-        return 0;
-    }
-    extern pde_t *kern_pgdir;
-    int is_enabled = is_large_page_enabled();
-    // 0x00000000 -> 0x00000000, Permission:
-    //  V address -> P address   Permission: K | R
-    cprintf("\n V address -> P address   Permission: K | R\n");
-    for (size_t i = start_ptr; i <= end_ptr; i += PGSIZE)
-    {
-        pde_t pde = kern_pgdir[PDX(i)];
-        if (is_enabled && (pde & PTE_PS))
-        {
-            char perm[6] = "R-|--";
+//     start_ptr = ROUNDDOWN(start_ptr, PGSIZE);
+//     end_ptr = ROUNDUP(end_ptr, PGSIZE);
 
-            if ((pde & PTE_W) && !(pde & PTE_U))
-                perm[1] = 'W';
-            if ((pde & PTE_W) && (pde & PTE_U))
-            {
-                perm[1] = 'W';
-                perm[3] = 'R';
-                perm[4] = 'W';
-            }
-            if (!(pde & PTE_W) && (pde & PTE_U))
-                perm[3] = 'R';
+//     if (start_ptr > end_ptr)
+//     {
+//         cprintf("Start virtual address is larger than end virtual address.\n");
+//         return 0;
+//     }
+//     // extern pde_t *kern_pgdir;
+//     // int is_enabled = is_large_page_enabled();
 
-            cprintf("0x%08x -> 0x%08x, Permission: ", i,
-                    (pde & 0xffc00000) + (i & 0x3fffff));
-            cprintf("%s It's a large page\n", perm);
-        }
-        else
-        {
-            pte_t *pte_ptr = pgdir_walk(kern_pgdir, (void *)i, 0);
-            if (pte_ptr != NULL && (*pte_ptr & PTE_P))
-            {
-                char perm[6] = "R-|--";
+//     pde_t *pgdir = (pde_t *)rcr3();
 
-                if ((*pte_ptr & PTE_W) && !(*pte_ptr & PTE_U))
-                    perm[1] = 'W';
-                if ((*pte_ptr & PTE_W) && (*pte_ptr & PTE_U))
-                {
-                    perm[1] = 'W';
-                    perm[3] = 'R';
-                    perm[4] = 'W';
-                }
-                if (!(*pte_ptr & PTE_W) && (*pte_ptr & PTE_U))
-                    perm[3] = 'R';
+//     // 0x00000000 -> 0x00000000, Permission:
+//     //  V address -> P address   Permission: K | R
 
-                cprintf("0x%08x -> 0x%08x, Permission: ", i,
-                        PTE_ADDR(*pte_ptr));
-                cprintf("%s\n", perm);
-            }
-            else
-                cprintf("0x%08x -> not mapped\n", i);
-        }
-    }
-    return 0;
-}
+//     int pflag = 1;
+//     cprintf("\n V address -> P address   Permission: K | R\n");
+//     for (size_t i = start_ptr; i <= end_ptr; i += PGSIZE)
+//     {
+//         pte_t *pte_ptr = pgdir_walk(pgdir, (void *)i, 0);
+//         if (pte_ptr != NULL && (*pte_ptr & PTE_P))
+//         {
+//             pflag = 1;
+//             char perm[6] = "R-|--";
 
-int mon_set_permission(int argc, char **argv, struct Trapframe *tf)
-{
-    if (argc != 3)
-    {
-        cprintf("`setperm': invalid argc.\n");
-        return 0;
-    }
+//             if ((*pte_ptr & PTE_W) && !(*pte_ptr & PTE_U))
+//                 perm[1] = 'W';
+//             if ((*pte_ptr & PTE_W) && (*pte_ptr & PTE_U))
+//             {
+//                 perm[1] = 'W';
+//                 perm[3] = 'R';
+//                 perm[4] = 'W';
+//             }
+//             if (!(*pte_ptr & PTE_W) && (*pte_ptr & PTE_U))
+//                 perm[3] = 'R';
 
-    char *error_char = NULL;
+//             cprintf("0x%08x -> 0x%08x, Permission: ", i, PTE_ADDR(*pte_ptr));
+//             cprintf("%s\n", perm);
+//         }
+//         else
+//         {
+//             cprintf("0x%08x -> not mapped\n", i);
+//             cprintf("Stop printing until next virtual mapped.\n");
+//             pflag = 0;
+//         }
+//     }
+//     return 0;
+// }
 
-    uintptr_t ptr = strtol(argv[1], &error_char, 16);
-    if (*error_char != 0)
-    {
-        cprintf("`setperm': invalid arg: %s.\n", argv[1]);
-        return 0;
-    }
+// int mon_set_permission(int argc, char **argv, struct Trapframe *tf)
+// {
+//     if (argc != 3)
+//     {
+//         cprintf("`%s': invalid argc.\n");
+//         return 0;
+//     }
 
-    if (strlen(argv[2]) != 1)
-    {
-        cprintf("`setperm': invalid arg: %s.\n", argv[2]);
-        return 0;
-    }
+//     char *error_char = NULL;
 
-    ptr = ROUNDDOWN(ptr, PGSIZE);
+//     uintptr_t ptr = strtol(argv[1], &error_char, 16);
+//     if (*error_char != 0)
+//     {
+//         cprintf("`%s': invalid arg: %s.\n", argv[1]);
+//         return 0;
+//     }
 
-    extern pde_t *kern_pgdir;
-    int is_enabled = is_large_page_enabled();
+//     if (strlen(argv[2]) != 1)
+//     {
+//         cprintf("`%s': invalid arg: %s.\n", argv[2]);
+//         return 0;
+//     }
 
-    pde_t *pde_ptr = &kern_pgdir[PDX(ptr)];
-    if (is_enabled && (*pde_ptr & PTE_PS))
-    {
-        ptr = PDX(ptr) << PDXSHIFT;
-        switch (argv[2][0])
-        {
-        case 'K':
-            *pde_ptr &= ~PTE_U;
-            cprintf("PTE_U on virtual address 0x%08x is disabled. It's a large "
-                    "page\n",
-                    ptr);
-            break;
-        case 'U':
-            *pde_ptr |= PTE_U;
-            cprintf("PTE_U on virtual address 0x%08x is enabled. It's a large "
-                    "page\n",
-                    ptr);
-            break;
-        case 'R':
-            *pde_ptr &= ~PTE_W;
-            cprintf("PTE_W on virtual address 0x%08x is disabled. It's a large "
-                    "page\n",
-                    ptr);
-            break;
-        case 'W':
-            cprintf("PTE_W on virtual address 0x%08x is enabled. It's a large "
-                    "page\n",
-                    ptr);
-            *pde_ptr |= PTE_W;
-            break;
-        default:
-            cprintf("`setperm': invalid arg: %s.\n", argv[2]);
-            return 0;
-        }
-    }
-    else
-    {
-        pte_t *pte_ptr = pgdir_walk(kern_pgdir, (void *)ptr, 0);
-        if (pte_ptr != NULL && (*pte_ptr & PTE_P))
-        {
-            switch (argv[2][0])
-            {
-            case 'K':
-                cprintf("PTE_U on virtual address 0x%08x is disabled.\n", ptr);
-                *pte_ptr &= ~PTE_U;
-                break;
-            case 'U':
-                cprintf("PTE_U on virtual address 0x%08x is enabled.\n", ptr);
-                *pte_ptr |= PTE_U;
-                break;
-            case 'R':
-                cprintf("PTE_W on virtual address 0x%08x is disabled.\n", ptr);
-                *pte_ptr &= ~PTE_W;
-                break;
-            case 'W':
-                cprintf("PTE_W on virtual address 0x%08x is enabled.\n", ptr);
-                *pte_ptr |= PTE_W;
-                break;
-            default:
-                cprintf("`setperm': invalid arg: %s.\n", argv[2]);
-                return 0;
-            }
-        }
-        else
-            cprintf("Virtual address 0x%08x is not mapped\n", ptr);
-    }
-    return 0;
-}
+//     ptr = ROUNDDOWN(ptr, PGSIZE);
+
+//     // FIXME: 多多理解页表自映射！
+//     pte_t *pte_ptr = pgdir_walk(pgdir, (void *)ptr, 0);
+//     if (pte_ptr != NULL && (*pte_ptr & PTE_P))
+//     {
+//         switch (argv[2][0])
+//         {
+//         case 'K':
+//             cprintf("PTE_U on virtual address 0x%08x is disabled.\n", ptr);
+//             *pte_ptr &= ~PTE_U;
+//             break;
+//         case 'U':
+//             cprintf("PTE_U on virtual address 0x%08x is enabled.\n", ptr);
+//             *pte_ptr |= PTE_U;
+//             break;
+//         case 'R':
+//             cprintf("PTE_W on virtual address 0x%08x is disabled.\n", ptr);
+//             *pte_ptr &= ~PTE_W;
+//             break;
+//         case 'W':
+//             cprintf("PTE_W on virtual address 0x%08x is enabled.\n", ptr);
+//             *pte_ptr |= PTE_W;
+//             break;
+//         default:
+//             cprintf("`%s': invalid arg: %s.\n", argv[2]);
+//             return 0;
+//         }
+//     }
+//     else
+//         cprintf("Virtual address 0x%08x is not mapped\n", ptr);
+//     return 0;
+// }
 
 int mon_si(int argc, char **argv, struct Trapframe *tf)
 {
