@@ -42,8 +42,9 @@ static struct Command commands[] = {
     // page.", mon_show_map},
     // {"setperm", "Set perm. DO NOT use it when enable large page.",
     // mon_set_permission},
-    {"si", "Run single instruction and then break", mon_si},
-    {"c", "Continue to run", mon_c}};
+    // {"si", "Run single instruction and then break", mon_si},
+    // {"c", "Continue to run", mon_c}
+};
 // clang-format off
 
 /***** Implementations of basic kernel monitor commands *****/
@@ -324,31 +325,33 @@ static int is_large_page_enabled(void)
 //     return 0;
 // }
 
-int mon_si(int argc, char **argv, struct Trapframe *tf)
-{
-    if (tf != NULL && (tf->tf_trapno == T_DEBUG || tf->tf_trapno == T_BRKPT) &&
-        (tf->tf_cs & 3) == 3)
-    {
-        tf->tf_eflags |= FL_TF;
-        return -1;
-    }
+// int mon_si(int argc, char **argv, struct Trapframe *tf)
+// {
+//     if (tf != NULL && (tf->tf_trapno == T_DEBUG || tf->tf_trapno == T_BRKPT)
+//     &&
+//         (tf->tf_cs & 3) == 3)
+//     {
+//         tf->tf_eflags |= FL_TF;
+//         return -1;
+//     }
 
-    cprintf("Nothing running\n");
-    return 0;
-}
+//     cprintf("Nothing running\n");
+//     return 0;
+// }
 
-int mon_c(int argc, char **argv, struct Trapframe *tf)
-{
-    if (tf != NULL && (tf->tf_trapno == T_DEBUG || tf->tf_trapno == T_BRKPT) &&
-        (tf->tf_cs & 3) == 3)
-    {
-        tf->tf_eflags &= ~FL_TF;
-        return -1;
-    }
+// int mon_c(int argc, char **argv, struct Trapframe *tf)
+// {
+//     if (tf != NULL && (tf->tf_trapno == T_DEBUG || tf->tf_trapno == T_BRKPT)
+//     &&
+//         (tf->tf_cs & 3) == 3)
+//     {
+//         tf->tf_eflags &= ~FL_TF;
+//         return -1;
+//     }
 
-    cprintf("Nothing running\n");
-    return 0;
-}
+//     cprintf("Nothing running\n");
+//     return 0;
+// }
 // clang-format off
 
 
