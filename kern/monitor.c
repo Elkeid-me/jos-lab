@@ -27,23 +27,23 @@ struct Command {
 // clang-format on
 extern uint32_t fg_color, bg_color;
 
-// clang-format on
 int mon_color(int argc, char **argv, struct Trapframe *tf);
 int mon_show_map(int argc, char **argv, struct Trapframe *tf);
 int mon_set_permission(int argc, char **argv, struct Trapframe *tf);
 int mon_si(int argc, char **argv, struct Trapframe *tf);
 int mon_c(int argc, char **argv, struct Trapframe *tf);
-// clang-format off
 
 static struct Command commands[] = {
     {"help", "Display this list of commands", mon_help},
     {"kerninfo", "Display information about the kernel", mon_kerninfo},
     {"backtrace", "Backtrace the stack", mon_backtrace},
     {"color", "Change color", mon_color},
-    // {"showmap", "Show mapping relation. DO NOT use it when enable large page.", mon_show_map},
-    // {"setperm", "Set perm. DO NOT use it when enable large page.", mon_set_permission},
+    // {"showmap", "Show mapping relation. DO NOT use it when enable large
+    // page.", mon_show_map},
+    // {"setperm", "Set perm. DO NOT use it when enable large page.",
+    // mon_set_permission},
     {"si", "Run single instruction and then break", mon_si},
-    {"c","Continue to run", mon_c}};
+    {"c", "Continue to run", mon_c}};
 // clang-format off
 
 /***** Implementations of basic kernel monitor commands *****/
@@ -222,8 +222,8 @@ static int is_large_page_enabled(void)
 
 //     if (start_ptr > end_ptr)
 //     {
-//         cprintf("Start virtual address is larger than end virtual address.\n");
-//         return 0;
+//         cprintf("Start virtual address is larger than end virtual
+//         address.\n"); return 0;
 //     }
 //     // extern pde_t *kern_pgdir;
 //     // int is_enabled = is_large_page_enabled();
@@ -329,10 +329,8 @@ int mon_si(int argc, char **argv, struct Trapframe *tf)
     if (tf != NULL && (tf->tf_trapno == T_DEBUG || tf->tf_trapno == T_BRKPT) &&
         (tf->tf_cs & 3) == 3)
     {
-        void env_run(struct Env * e);
-        extern struct Env *curenv;
         tf->tf_eflags |= FL_TF;
-        env_run(curenv);
+        return -1;
     }
 
     cprintf("Nothing running\n");
@@ -344,11 +342,8 @@ int mon_c(int argc, char **argv, struct Trapframe *tf)
     if (tf != NULL && (tf->tf_trapno == T_DEBUG || tf->tf_trapno == T_BRKPT) &&
         (tf->tf_cs & 3) == 3)
     {
-        void env_run(struct Env * e);
-        extern struct Env *curenv;
-
         tf->tf_eflags &= ~FL_TF;
-        env_run(curenv);
+        return -1;
     }
 
     cprintf("Nothing running\n");
