@@ -1,7 +1,7 @@
 // Stripped-down primitive printf-style formatting routines,
 // used in common by printf, sprintf, fprintf, etc.
 // This code is also used by both the kernel and user programs.
-
+// clang-format off
 #include <inc/types.h>
 #include <inc/stdio.h>
 #include <inc/string.h>
@@ -206,12 +206,12 @@ vprintfmt(void (*putch)(int, void*), void *putdat, const char *fmt, va_list ap)
 			goto number;
 
 		// (unsigned) octal
-		case 'o':
-			// Replace this with your code.
-			putch('X', putdat);
-			putch('X', putdat);
-			putch('X', putdat);
-			break;
+        // clang-format on
+        case 'o':
+            num = getuint(&ap, lflag);
+            base = 8;
+            goto number;
+            // clang-format off
 
 		// pointer
 		case 'p':

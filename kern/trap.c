@@ -1,3 +1,5 @@
+// clang-format off
+#include "inc/memlayout.h"
 #include <inc/mmu.h>
 #include <inc/x86.h>
 #include <inc/assert.h>
@@ -65,17 +67,56 @@ static const char *trapname(int trapno)
 	return "(unknown trap)";
 }
 
-
-void
-trap_init(void)
+// clang-format on
+void trap_init(void)
 {
-	extern struct Segdesc gdt[];
+    extern struct Segdesc gdt[];
+    // LAB 3: Your code here.
+#define DefAndSetGate(gate, istrap, sel, func, dpl)                            \
+    void func();                                                               \
+    SETGATE(gate, istrap, sel, func, dpl)
 
-	// LAB 3: Your code here.
+    DefAndSetGate(idt[T_DIVIDE], 0, GD_KT, Divide_Error_h, 0);
+    DefAndSetGate(idt[T_DEBUG], 0, GD_KT, Debug_Exception_h, 0);
+    DefAndSetGate(idt[T_NMI], 0, GD_KT, NMI_Interrupt_h, 0);
+    DefAndSetGate(idt[T_BRKPT], 0, GD_KT, Breakpoint_h, 3);
 
-	// Per-CPU setup 
-	trap_init_percpu();
+    DefAndSetGate(idt[T_OFLOW], 0, GD_KT, Overflow_h, 3);
+    DefAndSetGate(idt[T_BOUND], 0, GD_KT, BOUND_Range_Exceeded_error_h, 3);
+    DefAndSetGate(idt[T_ILLOP], 0, GD_KT, Invalid_Opcode_h, 0);
+    DefAndSetGate(idt[T_DEVICE], 0, GD_KT, Device_Not_Available_h, 0);
+
+    DefAndSetGate(idt[T_DBLFLT], 0, GD_KT, Double_Fault_h, 0);
+    // 9 is reserved by Intel.
+    DefAndSetGate(idt[T_TSS], 0, GD_KT, Invalid_TSS_h, 0);
+    DefAndSetGate(idt[T_SEGNP], 0, GD_KT, Segment_Not_Present_h, 0);
+
+    DefAndSetGate(idt[T_STACK], 0, GD_KT, Stack_Segment_Fault_h, 0);
+    DefAndSetGate(idt[T_GPFLT], 0, GD_KT, General_Protection_h, 0);
+    DefAndSetGate(idt[T_PGFLT], 0, GD_KT, Page_Fault_h, 0);
+    // 15 is reserved by Intel.
+
+    DefAndSetGate(idt[T_FPERR], 0, GD_KT, x87_FPU_Floating_Point_Error_h, 0);
+    DefAndSetGate(idt[T_ALIGN], 0, GD_KT, Alignment_Check_h, 0);
+    DefAndSetGate(idt[T_MCHK], 0, GD_KT, Machine_Check_h, 0);
+    DefAndSetGate(idt[T_SIMDERR], 0, GD_KT, SIMD_Floating_Point_Exception_h, 0);
+
+    DefAndSetGate(idt[T_SYSCALL], 0, GD_KT, System_Call_h, 3);
+
+#define IA32_SYSENTER_CS 0x174
+#define IA32_SYSENTER_ESP 0x175
+#define IA32_SYSENTER_EIP 0x176
+    void fast_system_call();
+    asm volatile("wrmsr" : : "c"(IA32_SYSENTER_CS), "d"(0), "a"(GD_KT));
+    asm volatile("wrmsr" : : "c"(IA32_SYSENTER_ESP), "d"(0), "a"(KSTACKTOP));
+    asm volatile("wrmsr"
+                 :
+                 : "c"(IA32_SYSENTER_EIP), "d"(0), "a"(fast_system_call));
+
+    // Per-CPU setup
+    trap_init_percpu();
 }
+// clang-format off
 
 // Initialize and load the per-CPU TSS and IDT
 void
@@ -171,34 +212,52 @@ print_regs(struct PushRegs *regs)
 	cprintf("  eax  0x%08x\n", regs->reg_eax);
 }
 
-static void
-trap_dispatch(struct Trapframe *tf)
+// clang-format on
+static void trap_dispatch(struct Trapframe *tf)
 {
-	// Handle processor exceptions.
-	// LAB 3: Your code here.
+    // Handle processor exceptions.
+    // LAB 3: Your code here.
+    switch (tf->tf_trapno)
+    {
+    case T_DEBUG:
+    case T_BRKPT:
+        monitor(tf);
+        return;
+    case T_PGFLT:
+        page_fault_handler(tf);
+        return;
+    case T_SYSCALL:
+        tf->tf_regs.reg_eax = syscall(tf->tf_regs.reg_eax, tf->tf_regs.reg_edx,
+                                      tf->tf_regs.reg_ecx, tf->tf_regs.reg_ebx,
+                                      tf->tf_regs.reg_edi, tf->tf_regs.reg_esi);
+        env_run(curenv);
+    }
 
-	// Handle spurious interrupts
-	// The hardware sometimes raises these because of noise on the
-	// IRQ line or other reasons. We don't care.
-	if (tf->tf_trapno == IRQ_OFFSET + IRQ_SPURIOUS) {
-		cprintf("Spurious interrupt on irq 7\n");
-		print_trapframe(tf);
-		return;
-	}
+    // Handle spurious interrupts
+    // The hardware sometimes raises these because of noise on the
+    // IRQ line or other reasons. We don't care.
+    if (tf->tf_trapno == IRQ_OFFSET + IRQ_SPURIOUS)
+    {
+        cprintf("Spurious interrupt on irq 7\n");
+        print_trapframe(tf);
+        return;
+    }
 
-	// Handle clock interrupts. Don't forget to acknowledge the
-	// interrupt using lapic_eoi() before calling the scheduler!
-	// LAB 4: Your code here.
+    // Handle clock interrupts. Don't forget to acknowledge the
+    // interrupt using lapic_eoi() before calling the scheduler!
+    // LAB 4: Your code here.
 
-	// Unexpected trap: The user process or the kernel has a bug.
-	print_trapframe(tf);
-	if (tf->tf_cs == GD_KT)
-		panic("unhandled trap in kernel");
-	else {
-		env_destroy(curenv);
-		return;
-	}
+    // Unexpected trap: The user process or the kernel has a bug.
+    print_trapframe(tf);
+    if (tf->tf_cs == GD_KT)
+        panic("unhandled trap in kernel");
+    else
+    {
+        env_destroy(curenv);
+        return;
+    }
 }
+// clang-format off
 
 void
 trap(struct Trapframe *tf)
@@ -271,7 +330,8 @@ page_fault_handler(struct Trapframe *tf)
 	// Handle kernel-mode page faults.
 
 	// LAB 3: Your code here.
-
+	if ((tf->tf_cs & 3) == 0)
+		panic("Kernel panic with page fault\n");
 	// We've already handled kernel-mode exceptions, so if we get here,
 	// the page fault happened in user mode.
 
