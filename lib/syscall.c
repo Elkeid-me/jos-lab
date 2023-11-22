@@ -21,20 +21,20 @@ static inline int32_t syscall(int num, int check, uint32_t a1, uint32_t a2,
     // memory locations.
     switch (num)
     {
-    case SYS_cputs:
-    case SYS_cgetc:
-    case SYS_getenvid:
-    case SYS_env_destroy:
-        asm volatile("pushl %%ebp\n"
-                     "movl %%esp, %%ebp\n"
-                     "leal 114514f, %%esi\n"
-                     "sysenter\n"
-                     "114514:\n"
-                     "popl %%ebp\n"
-                     : "=a"(ret)
-                     : "a"(num), "d"(a1), "c"(a2), "b"(a3), "D"(a4)
-                     : "%esi");
-        break;
+    // case SYS_cputs:
+    // case SYS_cgetc:
+    // case SYS_getenvid:
+    // case SYS_env_destroy:
+    //     asm volatile("pushl %%ebp\n"
+    //                  "movl %%esp, %%ebp\n"
+    //                  "leal 114514f, %%esi\n"
+    //                  "sysenter\n"
+    //                  "114514:\n"
+    //                  "popl %%ebp\n"
+    //                  : "=a"(ret)
+    //                  : "a"(num), "d"(a1), "c"(a2), "b"(a3), "D"(a4)
+    //                  : "%esi");
+    //     break;
     default:
         asm volatile("int %1\n"
                      : "=a"(ret)
