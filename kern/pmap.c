@@ -301,7 +301,14 @@ mem_init_mp(void)
 	//     Permissions: kernel RW, user NONE
 	//
 	// LAB 4: Your code here:
-
+    // clang-format on
+    for (size_t i = 0; i < NCPU; i++)
+    {
+        uintptr_t kstacktop_i = KSTACKTOP - i * (KSTKSIZE + KSTKGAP);
+        boot_map_region(kern_pgdir, kstacktop_i - KSTKSIZE, KSTKSIZE,
+                        PADDR(percpu_kstacks[i]), PTE_W);
+    }
+    // clang-format off
 }
 
 // --------------------------------------------------------------
@@ -363,6 +370,16 @@ void page_init(void)
         pages[i].pp_link = page_free_list;
         page_free_list = &pages[i];
     }
+
+    size_t mpentry_page_id = PGNUM(MPENTRY_PADDR);
+
+    if (mpentry_page_id == npages - 1)
+        page_free_list = pages[mpentry_page_id].pp_link;
+    else
+        pages[mpentry_page_id + 1].pp_link = pages[mpentry_page_id].pp_link;
+
+    pages[mpentry_page_id].pp_link == NULL;
+    pages[mpentry_page_id].pp_ref = 1;
 }
 // clang-format off
 
@@ -665,19 +682,27 @@ void *mmio_map_region(physaddr_t pa, size_t size)
     // Hint: The staff solution uses boot_map_region.
     //
     // Your code here:
+
+    if (size == 0)
+        return (void *)base;
+
+    uintptr_t ret = base;
+
     physaddr_t pa_start = ROUNDDOWN(pa, PGSIZE);
 
     physaddr_t pa_end = ROUNDUP(pa + size, PGSIZE);
 
     size_t real_size = pa_end - pa_start;
 
-    if (pa_end > MMIOLIM)
+    if (base + real_size > MMIOLIM || pa_end < pa)
         panic("`%s': bigger than MMIOLIM.\n", __func__);
 
-    boot_map_region(kern_pgdir, MMIOBASE, real_size, pa_start,
+    base += real_size;
+
+    boot_map_region(kern_pgdir, ret, real_size, pa_start,
                     PTE_PCD | PTE_PWT | PTE_W);
 
-    return (void *)MMIOBASE;
+    return (void *)ret;
 }
 // clang-format off
 
