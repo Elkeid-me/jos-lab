@@ -1,5 +1,6 @@
 /* See COPYRIGHT for copyright information. */
 // clang-format off
+#include "inc/memlayout.h"
 #include <inc/x86.h>
 #include <inc/mmu.h>
 #include <inc/error.h>
@@ -637,36 +638,48 @@ tlb_invalidate(pde_t *pgdir, void *va)
 // Reserve size bytes in the MMIO region and map [pa,pa+size) at this
 // location.  Return the base of the reserved region.  size does *not*
 // have to be multiple of PGSIZE.
-//
-void *
-mmio_map_region(physaddr_t pa, size_t size)
+// clang-format on
+void *mmio_map_region(physaddr_t pa, size_t size)
 {
-	// Where to start the next region.  Initially, this is the
-	// beginning of the MMIO region.  Because this is static, its
-	// value will be preserved between calls to mmio_map_region
-	// (just like nextfree in boot_alloc).
-	static uintptr_t base = MMIOBASE;
+    // Where to start the next region.  Initially, this is the
+    // beginning of the MMIO region.  Because this is static, its
+    // value will be preserved between calls to mmio_map_region
+    // (just like nextfree in boot_alloc).
+    static uintptr_t base = MMIOBASE;
 
-	// Reserve size bytes of virtual memory starting at base and
-	// map physical pages [pa,pa+size) to virtual addresses
-	// [base,base+size).  Since this is device memory and not
-	// regular DRAM, you'll have to tell the CPU that it isn't
-	// safe to cache access to this memory.  Luckily, the page
-	// tables provide bits for this purpose; simply create the
-	// mapping with PTE_PCD|PTE_PWT (cache-disable and
-	// write-through) in addition to PTE_W.  (If you're interested
-	// in more details on this, see section 10.5 of IA32 volume
-	// 3A.)
-	//
-	// Be sure to round size up to a multiple of PGSIZE and to
-	// handle if this reservation would overflow MMIOLIM (it's
-	// okay to simply panic if this happens).
-	//
-	// Hint: The staff solution uses boot_map_region.
-	//
-	// Your code here:
-	panic("mmio_map_region not implemented");
+    // Reserve size bytes of virtual memory starting at base and
+    // map physical pages [pa,pa+size) to virtual addresses
+    // [base,base+size).  Since this is device memory and not
+    // regular DRAM, you'll have to tell the CPU that it isn't
+    // safe to cache access to this memory.  Luckily, the page
+    // tables provide bits for this purpose; simply create the
+    // mapping with PTE_PCD|PTE_PWT (cache-disable and
+    // write-through) in addition to PTE_W.  (If you're interested
+    // in more details on this, see section 10.5 of IA32 volume
+    // 3A.)
+    //
+    // Be sure to round size up to a multiple of PGSIZE and to
+    // handle if this reservation would overflow MMIOLIM (it's
+    // okay to simply panic if this happens).
+    //
+    // Hint: The staff solution uses boot_map_region.
+    //
+    // Your code here:
+    physaddr_t pa_start = ROUNDDOWN(pa, PGSIZE);
+
+    physaddr_t pa_end = ROUNDUP(pa + size, PGSIZE);
+
+    size_t real_size = pa_end - pa_start;
+
+    if (pa_end > MMIOLIM)
+        panic("`%s': bigger than MMIOLIM.\n", __func__);
+
+    boot_map_region(kern_pgdir, MMIOBASE, real_size, pa_start,
+                    PTE_PCD | PTE_PWT | PTE_W);
+
+    return (void *)MMIOBASE;
 }
+// clang-format off
 
 static uintptr_t user_mem_check_addr;
 
