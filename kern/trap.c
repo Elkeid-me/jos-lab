@@ -103,15 +103,16 @@ void trap_init(void)
 
     DefAndSetGate(idt[T_SYSCALL], 0, GD_KT, System_Call_h, 3);
 
-// #define IA32_SYSENTER_CS 0x174
-// #define IA32_SYSENTER_ESP 0x175
-// #define IA32_SYSENTER_EIP 0x176
-//     void fast_system_call();
-//     asm volatile("wrmsr" : : "c"(IA32_SYSENTER_CS), "d"(0), "a"(GD_KT));
-//     asm volatile("wrmsr" : : "c"(IA32_SYSENTER_ESP), "d"(0), "a"(KSTACKTOP));
-//     asm volatile("wrmsr"
-//                  :
-//                  : "c"(IA32_SYSENTER_EIP), "d"(0), "a"(fast_system_call));
+    // #define IA32_SYSENTER_CS 0x174
+    // #define IA32_SYSENTER_ESP 0x175
+    // #define IA32_SYSENTER_EIP 0x176
+    //     void fast_system_call();
+    //     asm volatile("wrmsr" : : "c"(IA32_SYSENTER_CS), "d"(0), "a"(GD_KT));
+    //     asm volatile("wrmsr" : : "c"(IA32_SYSENTER_ESP), "d"(0),
+    //     "a"(KSTACKTOP)); asm volatile("wrmsr"
+    //                  :
+    //                  : "c"(IA32_SYSENTER_EIP), "d"(0),
+    //                  "a"(fast_system_call));
 
     // Per-CPU setup
     trap_init_percpu();
@@ -153,7 +154,7 @@ trap_init_percpu(void)
 	thiscpu->cpu_ts.ts_iomb = sizeof(struct Taskstate);
 
 	// Initialize the TSS slot of the gdt.
-	gdt[(GD_TSS0 >> 3) + current_cpuid] = SEG16(STS_T32A, (uint32_t) (&ts),
+	gdt[(GD_TSS0 >> 3) + current_cpuid] = SEG16(STS_T32A, (uint32_t) (&thiscpu->cpu_ts),
 					sizeof(struct Taskstate) - 1, 0);
 	gdt[(GD_TSS0 >> 3) + current_cpuid].sd_s = 0;
 
@@ -302,6 +303,7 @@ trap(struct Trapframe *tf)
 		// Acquire the big kernel lock before doing any
 		// serious kernel work.
 		// LAB 4: Your code here.
+		lock_kernel();
 		assert(curenv);
 
 		// Garbage collect if current enviroment is a zombie
