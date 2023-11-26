@@ -29,11 +29,11 @@ void set_pgfault_handler(void (*handler)(struct UTrapframe *utf))
         // LAB 4: Your code here.
         int ret = 0;
 
-        ret = sys_page_alloc(0, (void *)(UXSTACKTOP - PGSIZE), PTE_U | PTE_W);
+        ret = sys_page_alloc(0, (void *)(UXSTACKTOP - PGSIZE), PTE_P | PTE_U | PTE_W);
         if (ret < 0)
             panic("`%s' error: %e", __func__, ret);
 
-        ret = sys_env_set_pgfault_upcall(0, handler);
+        ret = sys_env_set_pgfault_upcall(0, _pgfault_upcall);
         if (ret < 0)
             panic("`%s' error: %e", __func__, ret);
     }

@@ -193,7 +193,7 @@ static int sys_page_alloc(envid_t envid, void *va, int perm)
     if (!check_perm(perm))
         return -E_INVAL;
 
-    struct PageInfo *page_info_ptr = page_alloc(perm);
+    struct PageInfo *page_info_ptr = page_alloc(ALLOC_ZERO);
 
     if (page_info_ptr == NULL)
         return -E_NO_MEM;

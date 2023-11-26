@@ -403,8 +403,8 @@ void page_fault_handler(struct Trapframe *tf)
     if (fault_va < UXSTACKTOP - PGSIZE && fault_va >= UXSTACKTOP - 2 * PGSIZE)
         page_fault_handler_err(tf, fault_va);
 
-    uint32_t new_esp = USTACKTOP - sizeof(struct UTrapframe);
-    if (fault_va >= UXSTACKTOP - PGSIZE && fault_va < UXSTACKTOP)
+    uint32_t new_esp = UXSTACKTOP - sizeof(struct UTrapframe);
+    if (tf->tf_esp >= UXSTACKTOP - PGSIZE && tf->tf_esp < UXSTACKTOP)
         new_esp = tf->tf_esp - 4 - sizeof(struct UTrapframe);
 
     if (new_esp < UXSTACKTOP - PGSIZE)
