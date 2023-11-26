@@ -126,6 +126,7 @@ void env_init(void)
         envs[i].env_id = 0;
         envs[i].env_link = env_free_list;
         envs[i].env_status = ENV_FREE;
+        envs[i].env_pgfault_upcall = NULL;
         env_free_list = &envs[i];
     }
     // Per-CPU part of the initialization
