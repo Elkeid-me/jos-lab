@@ -1,4 +1,5 @@
 // clang-format off
+#include "inc/trap.h"
 #include "inc/memlayout.h"
 #include <inc/mmu.h>
 #include <inc/x86.h>
@@ -397,19 +398,16 @@ void page_fault_handler(struct Trapframe *tf)
         page_fault_handler_err(tf, fault_va);
 
     user_mem_assert(curenv, curenv->env_pgfault_upcall, 1, PTE_U);
-    user_mem_assert(curenv, (void *)(UXSTACKTOP - PGSIZE), PGSIZE,
-                    PTE_U | PTE_W);
 
     if (fault_va < UXSTACKTOP - PGSIZE && fault_va >= UXSTACKTOP - 2 * PGSIZE)
         page_fault_handler_err(tf, fault_va);
+
 
     uint32_t new_esp = UXSTACKTOP - sizeof(struct UTrapframe);
     if (tf->tf_esp >= UXSTACKTOP - PGSIZE && tf->tf_esp < UXSTACKTOP)
         new_esp = tf->tf_esp - 4 - sizeof(struct UTrapframe);
 
-    if (new_esp < UXSTACKTOP - PGSIZE)
-        page_fault_handler_err(tf, fault_va);
-
+    user_mem_assert(curenv, (void *)(new_esp), sizeof(struct UTrapframe), PTE_U | PTE_W);
     struct UTrapframe *utf_ptr = (struct UTrapframe *)new_esp;
 
     utf_ptr->utf_esp = tf->tf_esp;
