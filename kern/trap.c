@@ -302,7 +302,7 @@ trap(struct Trapframe *tf)
 		// LAB 4: Your code here.
 		lock_kernel();
 		assert(curenv);
-		asm volatile("fxsave (%%eax)" :: "a"(&curenv->float_regs) : "memory");
+		asm volatile("fxsave (%%eax)" ::"a"(&curenv->float_regs));
 
 		// Garbage collect if current enviroment is a zombie
 		if (curenv->env_status == ENV_DYING) {
