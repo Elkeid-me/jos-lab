@@ -46,7 +46,6 @@ static void pgfault(struct UTrapframe *utf)
     r = sys_page_alloc(0, PFTEMP, PTE_P | PTE_U | PTE_W);
     if (r < 0)
         panic("`%s' error: %e\n", __func__, r);
-    memset(PFTEMP, 0, PGSIZE);
     memcpy(PFTEMP, addr, PGSIZE);
 
     r = sys_page_map(0, PFTEMP, 0, addr, PTE_P | PTE_U | PTE_W);
@@ -143,12 +142,11 @@ envid_t fork(void)
                                  PTE_P | PTE_U | PTE_W);
         if (ret < 0)
             panic("1");
-        extern void _pgfault_upcall(void);
-        if (ret = sys_env_set_pgfault_upcall(fork_ret,
-                                             thisenv->env_pgfault_upcall),
-            ret < 0)
+        ret = sys_env_set_pgfault_upcall(fork_ret, thisenv->env_pgfault_upcall);
+        if (ret < 0)
             panic("2");
-        if (ret = sys_env_set_status(fork_ret, ENV_RUNNABLE), ret < 0)
+        ret = sys_env_set_status(fork_ret, ENV_RUNNABLE);
+        if (ret < 0)
             panic("3");
     }
 

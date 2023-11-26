@@ -104,6 +104,13 @@ void trap_init(void)
 
     DefAndSetGate(idt[T_SYSCALL], 0, GD_KT, System_Call_h, 3);
 
+    DefAndSetGate(idt[IRQ_OFFSET + IRQ_TIMER], 0, GD_KT, irq_timer_h, 3);
+    DefAndSetGate(idt[IRQ_OFFSET + IRQ_KBD], 0, GD_KT, irq_kbd_h, 3);
+    DefAndSetGate(idt[IRQ_OFFSET + IRQ_SERIAL], 0, GD_KT, irq_serial_h, 3);
+    DefAndSetGate(idt[IRQ_OFFSET + IRQ_SPURIOUS], 0, GD_KT, irq_spurious_h, 3);
+    DefAndSetGate(idt[IRQ_OFFSET + IRQ_IDE], 0, GD_KT, irq_ide_h, 3);
+    DefAndSetGate(idt[IRQ_OFFSET + IRQ_ERROR], 0, GD_KT, irq_error_h, 3);
+
     // #define IA32_SYSENTER_CS 0x174
     // #define IA32_SYSENTER_ESP 0x175
     // #define IA32_SYSENTER_EIP 0x176
@@ -249,6 +256,10 @@ static void trap_dispatch(struct Trapframe *tf)
         tf->tf_regs.reg_eax = syscall(tf->tf_regs.reg_eax, tf->tf_regs.reg_edx,
                                       tf->tf_regs.reg_ecx, tf->tf_regs.reg_ebx,
                                       tf->tf_regs.reg_edi, tf->tf_regs.reg_esi);
+        return;
+    case IRQ_OFFSET + IRQ_TIMER:
+        lapic_eoi();
+        sched_yield();
         return;
     }
 
@@ -402,12 +413,12 @@ void page_fault_handler(struct Trapframe *tf)
     if (fault_va < UXSTACKTOP - PGSIZE && fault_va >= UXSTACKTOP - 2 * PGSIZE)
         page_fault_handler_err(tf, fault_va);
 
-
     uint32_t new_esp = UXSTACKTOP - sizeof(struct UTrapframe);
     if (tf->tf_esp >= UXSTACKTOP - PGSIZE && tf->tf_esp < UXSTACKTOP)
         new_esp = tf->tf_esp - 4 - sizeof(struct UTrapframe);
 
-    user_mem_assert(curenv, (void *)(new_esp), sizeof(struct UTrapframe), PTE_U | PTE_W);
+    user_mem_assert(curenv, (void *)(new_esp), sizeof(struct UTrapframe),
+                    PTE_U | PTE_W);
     struct UTrapframe *utf_ptr = (struct UTrapframe *)new_esp;
 
     utf_ptr->utf_esp = tf->tf_esp;

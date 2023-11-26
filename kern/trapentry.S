@@ -73,6 +73,14 @@ TRAPHANDLER_NOEC(Machine_Check_h, T_MCHK)
 TRAPHANDLER_NOEC(SIMD_Floating_Point_Exception_h, T_SIMDERR)
 TRAPHANDLER_NOEC(System_Call_h, T_SYSCALL)
 
+
+TRAPHANDLER_NOEC(irq_timer_h, IRQ_OFFSET + IRQ_TIMER)
+TRAPHANDLER_NOEC(irq_kbd_h, IRQ_OFFSET + IRQ_KBD)
+TRAPHANDLER_NOEC(irq_serial_h, IRQ_OFFSET + IRQ_SERIAL)
+TRAPHANDLER_NOEC(irq_spurious_h, IRQ_OFFSET + IRQ_SPURIOUS)
+TRAPHANDLER_NOEC(irq_ide_h, IRQ_OFFSET + IRQ_IDE)
+TRAPHANDLER_NOEC(irq_error_h, IRQ_OFFSET + IRQ_ERROR)
+
 .global fast_system_call
 .type fast_system_call, @function
 .align 2
