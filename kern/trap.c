@@ -156,13 +156,16 @@ trap_init_percpu(void)
 	//
 	// LAB 4: Your code here:
 
-	int current_cpuid = thiscpu->cpu_id;
-	thiscpu->cpu_ts.ts_esp0 = KSTACKTOP - current_cpuid * (KSTKSIZE + KSTKGAP);
-	thiscpu->cpu_ts.ts_ss0 = GD_KD;
-	thiscpu->cpu_ts.ts_iomb = sizeof(struct Taskstate);
+	int current_cpuid = cpunum();
+
+	struct Taskstate *ts = &cpus[current_cpuid].cpu_ts;
+
+	ts->ts_esp0 = KSTACKTOP - current_cpuid * (KSTKSIZE + KSTKGAP);
+	ts->ts_ss0 = GD_KD;
+	ts->ts_iomb = sizeof(struct Taskstate);
 
 	// Initialize the TSS slot of the gdt.
-	gdt[(GD_TSS0 >> 3) + current_cpuid] = SEG16(STS_T32A, (uint32_t) (&thiscpu->cpu_ts),
+	gdt[(GD_TSS0 >> 3) + current_cpuid] = SEG16(STS_T32A, (uint32_t)ts,
 					sizeof(struct Taskstate) - 1, 0);
 	gdt[(GD_TSS0 >> 3) + current_cpuid].sd_s = 0;
 
