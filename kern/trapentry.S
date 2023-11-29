@@ -85,18 +85,19 @@ TRAPHANDLER_NOEC(irq_error_h, IRQ_OFFSET + IRQ_ERROR)
 .type fast_system_call, @function
 .align 2
 fast_system_call:
-	pushl	$0
-	pushl	%edi
-	pushl	%ebx
-	pushl	%ecx
-	pushl	%edx
-	pushl	%eax
+    pushl   $0
+    pushl   %edi
+    pushl   %ebx
+    pushl   %ecx
+    pushl   %edx
+    pushl   %eax
 
-	call	syscall
+    call    syscall_fast
 
-	movl	%esi,	%edx
-	movl	%ebp,	%ecx
-	sysexit
+    movl    %esi,   %edx
+    movl    %ebp,   %ecx
+    sti
+    sysexit
 
 
 /*
@@ -104,19 +105,19 @@ fast_system_call:
  */
 
 _alltraps:
-	pushw	$0
-	pushw	%ds
+    pushw   $0
+    pushw   %ds
 
-	pushw	$0
-	pushw	%es
+    pushw   $0
+    pushw   %es
 
-	pushal
+    pushal
 
-	xorl	%eax,	%eax
+    xorl    %eax,   %eax
 
-	movw	$GD_KD,	%ax
-	movw	%ax,	%ds
-	movw	%ax,	%es
+    movw    $GD_KD, %ax
+    movw    %ax,    %ds
+    movw    %ax,    %es
 
-	pushl	%esp
-	call	trap
+    pushl   %esp
+    call    trap
