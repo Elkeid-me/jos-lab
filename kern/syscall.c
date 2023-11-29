@@ -442,24 +442,11 @@ int32_t syscall_fast(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3,
     case SYS_getenvid:
         ret = sys_getenvid();
         break;
-    case SYS_env_destroy:
-        ret = sys_env_destroy(a1);
-        break;
-    case SYS_yield:
-        sys_yield();
-        ret = 0;
-        break;
-    case SYS_exofork:
-        ret = sys_exofork();
-        break;
     case SYS_env_set_status:
         ret = sys_env_set_status(a1, a2);
         break;
     case SYS_page_alloc:
         ret = sys_page_alloc(a1, (void *)a2, a3);
-        break;
-    case SYS_page_map:
-        ret = sys_page_map(a1, (void *)a2, a3, (void *)a4, a5);
         break;
     case SYS_page_unmap:
         ret = sys_page_unmap(a1, (void *)a2);
@@ -469,9 +456,6 @@ int32_t syscall_fast(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3,
         break;
     case SYS_ipc_try_send:
         ret = sys_ipc_try_send(a1, a2, (void *)a3, a4);
-        break;
-    case SYS_ipc_recv:
-        ret = sys_ipc_recv((void *)a1);
         break;
     default:
         ret = -E_INVAL;
