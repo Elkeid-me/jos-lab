@@ -26,7 +26,6 @@ static inline int32_t syscall(int num, int check, uint32_t a1, uint32_t a2,
     case SYS_getenvid:
     case SYS_page_alloc:
     case SYS_page_unmap:
-    case SYS_exofork:
     case SYS_env_set_status:
     case SYS_env_set_pgfault_upcall:
     case SYS_ipc_try_send:
@@ -38,7 +37,7 @@ static inline int32_t syscall(int num, int check, uint32_t a1, uint32_t a2,
                      "popl %%ebp\n"
                      : "=a"(ret)
                      : "a"(num), "d"(a1), "c"(a2), "b"(a3), "D"(a4)
-                     : "%esi");
+                     : "%esi", "cc", "memory");
         break;
     default:
         asm volatile("int %1\n"
