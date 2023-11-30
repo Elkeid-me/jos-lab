@@ -429,38 +429,7 @@ int32_t syscall_fast(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3,
                      uint32_t a4, uint32_t a5)
 {
     lock_kernel();
-    int ret;
-    switch (syscallno)
-    {
-    case SYS_cgetc:
-        ret = sys_cgetc();
-        break;
-    case SYS_cputs:
-        sys_cputs((const char *)a1, a2);
-        ret = 0;
-        break;
-    case SYS_getenvid:
-        ret = sys_getenvid();
-        break;
-    case SYS_env_set_status:
-        ret = sys_env_set_status(a1, a2);
-        break;
-    case SYS_page_alloc:
-        ret = sys_page_alloc(a1, (void *)a2, a3);
-        break;
-    case SYS_page_unmap:
-        ret = sys_page_unmap(a1, (void *)a2);
-        break;
-    case SYS_env_set_pgfault_upcall:
-        ret = sys_env_set_pgfault_upcall(a1, (void *)a2);
-        break;
-    case SYS_ipc_try_send:
-        ret = sys_ipc_try_send(a1, a2, (void *)a3, a4);
-        break;
-    default:
-        ret = -E_INVAL;
-        break;
-    }
+    int32_t ret = syscall(syscallno, a1, a2, a3, a4, a5);
     unlock_kernel();
     return ret;
 }
