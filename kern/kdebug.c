@@ -1,3 +1,4 @@
+// clang-format off
 #include <inc/stab.h>
 #include <inc/string.h>
 #include <inc/memlayout.h>
@@ -142,7 +143,8 @@ debuginfo_eip(uintptr_t addr, struct Eipdebuginfo *info)
 		// Make sure this memory is valid.
 		// Return -1 if it is not.  Hint: Call user_mem_check.
 		// LAB 3: Your code here.
-
+		if (user_mem_check(curenv, usd, sizeof(struct UserStabData), PTE_U) < 0)
+			return -1;
 		stabs = usd->stabs;
 		stab_end = usd->stab_end;
 		stabstr = usd->stabstr;
@@ -150,6 +152,10 @@ debuginfo_eip(uintptr_t addr, struct Eipdebuginfo *info)
 
 		// Make sure the STABS and string table memory is valid.
 		// LAB 3: Your code here.
+		if (user_mem_check(curenv, stabs, (uintptr_t)stab_end - (uintptr_t)stabs, PTE_U) < 0)
+			return -1;
+		if (user_mem_check(curenv, stabstr, (uintptr_t)stabstr_end - (uintptr_t)stabstr, PTE_U) < 0)
+			return -1;
 	}
 
 	// String table validity checks
@@ -204,14 +210,21 @@ debuginfo_eip(uintptr_t addr, struct Eipdebuginfo *info)
 	//	Look at the STABS documentation and <inc/stab.h> to find
 	//	which one.
 	// Your code here.
+    // clang-format on
+    stab_binsearch(stabs, &lline, &rline, N_SLINE, addr);
 
+    if (lline <= rline)
+        info->eip_line = lline;
+    else
+        info->eip_line = -1;
+    // clang-format off
 
 	// Search backwards from the line number for the relevant filename
 	// stab.
 	// We can't just use the "lfile" stab because inlined functions
 	// can interpolate code from a different file!
 	// Such included source files use the N_SOL stab type.
-	while (lline >= lfile
+    while (lline >= lfile
 	       && stabs[lline].n_type != N_SOL
 	       && (stabs[lline].n_type != N_SO || !stabs[lline].n_value))
 		lline--;

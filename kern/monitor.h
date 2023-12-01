@@ -1,3 +1,4 @@
+// clang-format off
 #ifndef JOS_KERN_MONITOR_H
 #define JOS_KERN_MONITOR_H
 #ifndef JOS_KERNEL

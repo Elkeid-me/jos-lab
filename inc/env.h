@@ -65,7 +65,9 @@ struct Env {
 	void *env_ipc_dstva;		// VA at which to map received page
 	uint32_t env_ipc_value;		// Data value sent to us
 	envid_t env_ipc_from;		// envid of the sender
-	int env_ipc_perm;		// Perm of page mapping received
-};
+	int env_ipc_perm;           // Perm of page mapping received
+	int padding;
+    char float_regs[512];
+} __attribute__((aligned(16)));
 
 #endif // !JOS_INC_ENV_H

@@ -1,5 +1,5 @@
 /* See COPYRIGHT for copyright information. */
-
+// clang-format off
 #include <inc/x86.h>
 #include <inc/memlayout.h>
 #include <inc/kbdreg.h>
@@ -46,6 +46,11 @@ delay(void)
 #define   COM_LSR_DATA	0x01	//   Data available
 #define   COM_LSR_TXRDY	0x20	//   Transmit buffer avail
 #define   COM_LSR_TSRE	0x40	//   Transmitter off
+// clang-format on
+// Change Color!
+uint32_t fg_color = DEFAULT_FG_COLOR, bg_color = DEFAULT_BG_COLOR;
+// 乐（
+// clang-format off
 
 static bool serial_exists;
 
@@ -168,8 +173,10 @@ static void
 cga_putc(int c)
 {
 	// if no attribute given, then use black on white
-	if (!(c & ~0xFF))
-		c |= 0x0700;
+    // clang-format on
+    if (!(c & ~0xFF))
+        c |= (fg_color << 8) | (bg_color << 12);
+    // clang-format off
 
 	switch (c & 0xff) {
 	case '\b':
