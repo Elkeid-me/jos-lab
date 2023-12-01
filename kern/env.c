@@ -569,7 +569,9 @@ void env_run(struct Env *e)
     curenv->env_status = ENV_RUNNING;
     curenv->env_runs++;
     lcr3(PADDR(curenv->env_pgdir));
+#ifdef Lab_4_Challenge_3
     asm volatile("fxrstor (%0)" ::"r"(curenv->float_regs) : "memory");
+#endif
     unlock_kernel();
     env_pop_tf(&(curenv->env_tf));
 }

@@ -11,6 +11,7 @@
 #include <kern/kclock.h>
 #include <kern/env.h>
 #include <kern/cpu.h>
+#include <inc/challenge_config.h>
 
 // These variables are set by i386_detect_memory()
 size_t npages;			// Amount of physical memory (in pages)
@@ -238,7 +239,11 @@ mem_init(void)
     // clang-format on
     uint32_t edx = 0;
     cpuid(1, NULL, NULL, NULL, &edx);
+#ifdef Lab_2_Challenge_1
     int is_large_page_supported = (edx >> 3) & 1;
+#else
+    int is_large_page_supported = 0;
+#endif
     if (is_large_page_supported)
     {
         uint32_t cr4 = rcr4();

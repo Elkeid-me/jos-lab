@@ -16,6 +16,7 @@
 #include <kern/picirq.h>
 #include <kern/cpu.h>
 #include <kern/spinlock.h>
+#include <inc/challenge_config.h>
 
 static struct Taskstate ts;
 
@@ -169,7 +170,10 @@ void trap_init_percpu(void)
 #define IA32_SYSENTER_EIP 0x176
     void fast_system_call();
     asm volatile("wrmsr" : : "c"(IA32_SYSENTER_CS), "d"(0), "a"(GD_KT));
-    asm volatile("wrmsr" : : "c"(IA32_SYSENTER_ESP), "d"(0), "a"(KSTACKTOP - current_cpuid * (KSTKSIZE + KSTKGAP)));
+    asm volatile("wrmsr"
+                 :
+                 : "c"(IA32_SYSENTER_ESP), "d"(0),
+                   "a"(KSTACKTOP - current_cpuid * (KSTKSIZE + KSTKGAP)));
     asm volatile("wrmsr"
                  :
                  : "c"(IA32_SYSENTER_EIP), "d"(0), "a"(fast_system_call));
@@ -261,8 +265,8 @@ static void trap_dispatch(struct Trapframe *tf)
     // interrupt using lapic_eoi() before calling the scheduler!
     // LAB 4: Your code here.
 
-	// Handle keyboard and serial interrupts.
-	// LAB 5: Your code here.
+    // Handle keyboard and serial interrupts.
+    // LAB 5: Your code here.
 
     // Unexpected trap: The user process or the kernel has a bug.
     print_trapframe(tf);
@@ -304,8 +308,9 @@ trap(struct Trapframe *tf)
 		// LAB 4: Your code here.
 		lock_kernel();
 		assert(curenv);
+#ifdef Lab_4_Challenge_3
 		asm volatile("fxsave (%0)" ::"r"(&curenv->float_regs) : "memory");
-
+#endif
 		// Garbage collect if current enviroment is a zombie
 		if (curenv->env_status == ENV_DYING) {
 			env_free(curenv);

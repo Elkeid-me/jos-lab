@@ -6,6 +6,7 @@
 #include <inc/types.h>
 #include <inc/trap.h>
 #include <inc/memlayout.h>
+#include <inc/challenge_config.h>
 
 typedef int32_t envid_t;
 
@@ -66,8 +67,14 @@ struct Env {
 	uint32_t env_ipc_value;		// Data value sent to us
 	envid_t env_ipc_from;		// envid of the sender
 	int env_ipc_perm;           // Perm of page mapping received
+#ifdef Lab_4_Challenge_3
 	int padding;
     char float_regs[512];
-} __attribute__((aligned(16)));
+#endif
+}
+#ifdef Lab_4_Challenge_3
+// __attribute__((aligned(16)))
+#endif
+;
 
 #endif // !JOS_INC_ENV_H

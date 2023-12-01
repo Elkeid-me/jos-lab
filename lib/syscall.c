@@ -2,6 +2,7 @@
 // clang-format off
 #include <inc/syscall.h>
 #include <inc/lib.h>
+#include <inc/challenge_config.h>
 // clang-format on
 static inline int32_t syscall(int num, int check, uint32_t a1, uint32_t a2,
                               uint32_t a3, uint32_t a4, uint32_t a5)
@@ -21,6 +22,7 @@ static inline int32_t syscall(int num, int check, uint32_t a1, uint32_t a2,
     // memory locations.
     switch (num)
     {
+#ifdef Lab_3_Challenge_3
     case SYS_cputs:
     case SYS_cgetc:
     case SYS_getenvid:
@@ -39,6 +41,7 @@ static inline int32_t syscall(int num, int check, uint32_t a1, uint32_t a2,
                      : "a"(num), "d"(a1), "c"(a2), "b"(a3), "D"(a4)
                      : "%esi", "cc", "memory");
         break;
+#endif
     default:
         asm volatile("int %1\n"
                      : "=a"(ret)
