@@ -2,7 +2,8 @@
 #include <inc/partition.h>
 
 #include "fs.h"
-
+extern struct Super *super;		// superblock
+extern uint32_t *bitmap;		// bitmap blocks mapped in memory
 // --------------------------------------------------------------
 // Super block
 // --------------------------------------------------------------
@@ -96,7 +97,7 @@ check_bitmap(void)
 void
 fs_init(void)
 {
-	static_assert(sizeof(struct File) == 256);
+	_Static_assert(sizeof(struct File) == 256, "");
 
 	// Find a JOS disk.  Use the second IDE disk (number 1) if available
 	if (ide_probe_disk1())
@@ -112,7 +113,7 @@ fs_init(void)
 	// Set "bitmap" to the beginning of the first bitmap block.
 	bitmap = diskaddr(2);
 	check_bitmap();
-	
+
 }
 
 // Find the disk block number slot for the 'filebno'th block in file 'f'.

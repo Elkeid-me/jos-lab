@@ -19,7 +19,7 @@ fsipc(unsigned type, void *dstva)
 	if (fsenv == 0)
 		fsenv = ipc_find_env(ENV_TYPE_FS);
 
-	static_assert(sizeof(fsipcbuf) == PGSIZE);
+	_Static_assert(sizeof(fsipcbuf) == PGSIZE, "");
 
 	if (debug)
 		cprintf("[%08x] fsipc %d %08x\n", thisenv->env_id, type, *(uint32_t *)&fsipcbuf);

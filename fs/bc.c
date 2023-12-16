@@ -1,6 +1,7 @@
 
 #include "fs.h"
-
+struct Super *super;		// superblock
+uint32_t *bitmap;		// bitmap blocks mapped in memory
 // Return the virtual address of this disk block.
 void*
 diskaddr(uint32_t blockno)
