@@ -31,11 +31,11 @@ int mon_color(int argc, char **argv, struct Trapframe *tf);
 int mon_si(int argc, char **argv, struct Trapframe *tf);
 int mon_c(int argc, char **argv, struct Trapframe *tf);
 
-static struct Command commands[] =
-    {{"help", "Display this list of commands", mon_help},
-     {"kerninfo", "Display information about the kernel", mon_kerninfo},
-     {"backtrace", "Backtrace the stack", mon_backtrace},
-     {"color", "Change color", mon_color}};
+static struct Command commands[] = {
+    {"help", "Display this list of commands", mon_help},
+    {"kerninfo", "Display information about the kernel", mon_kerninfo},
+    {"backtrace", "Backtrace the stack", mon_backtrace},
+    {"color", "Change color", mon_color}};
 // clang-format off
 
 /***** Implementations of basic kernel monitor commands *****/
@@ -166,18 +166,32 @@ int mon_color(int argc, char **argv, struct Trapframe *tf)
     return 0;
 }
 
-static int is_large_page_enabled(void)
+int mon_si(int argc, char **argv, struct Trapframe *tf)
 {
-    uint32_t edx = 0;
-    uint32_t cr4 = rcr4();
-    cpuid(1, NULL, NULL, NULL, &edx);
+    if (tf != NULL && (tf->tf_trapno == T_DEBUG || tf->tf_trapno == T_BRKPT) &&
+        (tf->tf_cs & 3) == 3)
+    {
+        tf->tf_eflags |= FL_TF;
+        return -1;
+    }
 
-    int is_large_page_supported = (edx >> 3) & 1;
-    if (is_large_page_supported && (cr4 & CR4_PSE))
-        return 1;
-    else
-        return 0;
+    cprintf("Nothing running\n");
+    return 0;
 }
+
+int mon_c(int argc, char **argv, struct Trapframe *tf)
+{
+    if (tf != NULL && (tf->tf_trapno == T_DEBUG || tf->tf_trapno == T_BRKPT) &&
+        (tf->tf_cs & 3) == 3)
+    {
+        tf->tf_eflags &= ~FL_TF;
+        return -1;
+    }
+
+    cprintf("Nothing running\n");
+    return 0;
+}
+
 // clang-format off
 
 
