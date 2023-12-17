@@ -1,8 +1,17 @@
 // clang-format off
 #include <inc/string.h>
 #include <inc/partition.h>
+#include <inc/challenge_config.h>
 
 #include "fs.h"
+
+#ifdef Lab_5_Challenge_2
+int buffer_evict(void);
+int buffer_alloc(void *ptr);
+void buffer_init(void);
+int buffer_visit(void);
+#endif
+
 extern struct Super *super;		// superblock
 extern uint32_t *bitmap;		// bitmap blocks mapped in memory
 // --------------------------------------------------------------
@@ -46,6 +55,11 @@ free_block(uint32_t blockno)
 	if (blockno == 0)
 		panic("attempt to free zero block");
 	bitmap[blockno/32] |= 1<<(blockno%32);
+#ifdef Lab_5_Challenge_2
+    int r = sys_page_unmap(0, diskaddr(blockno));
+	if (r < 0)
+		panic("?");
+#endif
 }
 
 // Search the bitmap for a free block and allocate it.  When you
@@ -192,9 +206,14 @@ int file_get_block(struct File *f, uint32_t filebno, char **blk)
         r = alloc_block();
         if (r < 0)
             return r;
-        *disk_block =r;
+        *disk_block = r;
     }
     *blk = (char *)diskaddr(*disk_block);
+#ifdef Lab_5_Challenge_2
+    r = buffer_visit();
+    if (r < 0)
+        return r;
+#endif
     return 0;
 }
 // clang-format off
@@ -500,3 +519,133 @@ fs_sync(void)
 		flush_block(diskaddr(i));
 }
 
+// clang-format on
+#ifdef Lab_5_Challenge_2
+#define N_BUFFER 16
+#define N_VISIT 4
+
+int n_visit = 0;
+struct buffer_block
+{
+    struct buffer_block *prev, *next;
+    void *buffer_ptr;
+};
+
+struct buffer_block buffers[N_BUFFER];
+struct buffer_block buffer_free, buffer_used;
+int n_buffer_used;
+
+int buffer_alloc(void *ptr)
+{
+    if (ptr < diskaddr(2))
+        return 0;
+    cprintf("new block\n");
+    if (n_buffer_used == N_BUFFER)
+    {
+        int r = buffer_evict();
+        if (r < 0)
+            return r;
+    }
+
+    struct buffer_block *new_block = buffer_free.next;
+    buffer_free.next->next->prev = &buffer_free;
+    buffer_free.next = buffer_free.next->next;
+
+    new_block->next = &buffer_used;
+    new_block->prev = buffer_used.prev;
+
+    buffer_used.prev->next = new_block;
+    buffer_used.prev = new_block;
+
+    new_block->buffer_ptr = ptr;
+    n_buffer_used++;
+    return 0;
+}
+
+int buffer_visit(void)
+{
+    n_visit++;
+    if (n_visit < N_VISIT)
+        return 0;
+
+    n_visit = 0;
+
+    for (struct buffer_block *p = buffer_used.next; p != &buffer_used;
+         p = p->next)
+    {
+        flush_block(p->buffer_ptr);
+        int r = sys_page_map(0, p->buffer_ptr, 0, p->buffer_ptr,
+                             uvpt[PGNUM(p->buffer_ptr)] & PTE_SYSCALL);
+        if (r < 0)
+            return r;
+    }
+
+    return 0;
+}
+
+int buffer_evict(void)
+{
+    struct buffer_block *p = buffer_used.next;
+    while (p != &buffer_used)
+    {
+        struct buffer_block *p_next = p->next;
+        if (!(uvpt[PGNUM(p->buffer_ptr)] & PTE_A))
+        {
+            flush_block(p->buffer_ptr);
+            int r = sys_page_unmap(0, p->buffer_ptr);
+            if (r < 0)
+                return r;
+            p->prev->next = p->next;
+            p->next->prev = p->prev;
+
+            p->buffer_ptr = NULL;
+
+            p->prev = buffer_free.prev;
+            buffer_free.prev->next = p;
+            p->next = &buffer_free;
+            buffer_free.prev = p;
+
+            n_buffer_used--;
+        }
+        p = p_next;
+    }
+    if (n_buffer_used == N_BUFFER)
+    {
+        p = buffer_used.next;
+        flush_block(p->buffer_ptr);
+        int r = sys_page_unmap(0, p->buffer_ptr);
+        if (r < 0)
+            return r;
+        p->prev->next = p->next;
+        p->next->prev = p->prev;
+
+        p->buffer_ptr = NULL;
+
+        p->prev = buffer_free.prev;
+        buffer_free.prev->next = p;
+        p->next = &buffer_free;
+        buffer_free.prev = p;
+        n_buffer_used--;
+    }
+    return 0;
+}
+
+void buffer_init(void)
+{
+    buffer_free.next = buffers;
+    buffers[0].prev = &buffer_free;
+    buffers[0].next = buffers + 1;
+    for (size_t i = 1; i < N_BUFFER - 1; i++)
+    {
+        buffers[i].prev = buffers + i - 1;
+        buffers[i].next = buffers + i + 1;
+    }
+    buffers[N_BUFFER - 1].prev = buffers + N_BUFFER - 2;
+    buffers[N_BUFFER - 1].next = &buffer_free;
+    buffer_free.prev = buffers + N_BUFFER - 1;
+
+    buffer_used.next = &buffer_used;
+    buffer_used.prev = &buffer_used;
+}
+#endif
+// clang-format off;

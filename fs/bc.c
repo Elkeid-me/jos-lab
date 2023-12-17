@@ -1,4 +1,5 @@
 // clang-format off
+#include <inc/challenge_config.h>
 #include "fs.h"
 struct Super *super;		// superblock
 uint32_t *bitmap;		// bitmap blocks mapped in memory
@@ -68,6 +69,12 @@ static void bc_pgfault(struct UTrapframe *utf)
     // in?)
     if (bitmap && block_is_free(blockno))
         panic("reading free block %08x\n", blockno);
+#ifdef Lab_5_Challenge_2
+    int buffer_alloc(void *ptr);
+    r = buffer_alloc(addr);
+    if (r < 0)
+        panic("`%s' error: %e", __func__, r);
+#endif
 }
 
 // Flush the contents of the block containing VA out to disk if
@@ -158,6 +165,10 @@ check_bc(void)
 void
 bc_init(void)
 {
+#ifdef Lab_5_Challenge_2
+	void buffer_init(void);
+	buffer_init();
+#endif
 	struct Super super;
 	set_pgfault_handler(bc_pgfault);
 	check_bc();
