@@ -58,7 +58,7 @@ free_block(uint32_t blockno)
 #ifdef Lab_5_Challenge_2
     int r = sys_page_unmap(0, diskaddr(blockno));
 	if (r < 0)
-		panic("?");
+		panic("`%s', error: %e.", __func__, r);
 #endif
 }
 
@@ -521,8 +521,8 @@ fs_sync(void)
 
 // clang-format on
 #ifdef Lab_5_Challenge_2
-#define N_BUFFER 16
-#define N_VISIT 4
+#define N_BUFFER 1024
+#define N_VISIT 256
 
 int n_visit = 0;
 struct buffer_block
