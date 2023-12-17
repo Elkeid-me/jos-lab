@@ -1,3 +1,4 @@
+// clang-format off
 #include <inc/lib.h>
 #include <inc/elf.h>
 
@@ -107,7 +108,7 @@ spawn(const char *prog, const char **argv)
 	child_tf = envs[ENVX(child)].env_tf;
 	child_tf.tf_eip = elf->e_entry;
 
-	if ((r = init_stack(child, argv, (uintptr_t *)(&child_tf + offsetof(struct Trapframe, tf_esp)))) < 0)
+	if ((r = init_stack(child, argv, (uintptr_t *)(((char *)&child_tf) + offsetof(struct Trapframe, tf_esp)))) < 0)
 		return r;
 
 	// Set up program segments as defined in ELF header.
