@@ -298,11 +298,30 @@ map_segment(envid_t child, uintptr_t va, size_t memsz,
 	return 0;
 }
 
+// clang-format on
 // Copy the mappings for shared pages into the child address space.
-static int
-copy_shared_pages(envid_t child)
+static int copy_shared_pages(envid_t child)
 {
-	// LAB 5: Your code here.
-	return 0;
+    // LAB 5: Your code here.
+    uintptr_t address = 0;
+    while (address < UTOP)
+    {
+        if (uvpd[PDX(address)] & PTE_P)
+        {
+            pte_t pte = uvpt[PGNUM(address)];
+            if ((pte & (PTE_P | PTE_U | PTE_SHARE)) ==
+                (PTE_P | PTE_U | PTE_SHARE))
+            {
+                int r = sys_page_map(0, (void *)address, child, (void *)address,
+                                     pte & PTE_SYSCALL);
+                if (r < 0)
+                    return r;
+            }
+            address += PGSIZE;
+        }
+        else
+            address += PTSIZE;
+    }
+    return 0;
 }
-
+// clang-format off

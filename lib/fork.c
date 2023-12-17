@@ -75,22 +75,23 @@ static int duppage(envid_t envid, unsigned pn)
     if ((pte & (PTE_P | PTE_U)) != (PTE_P | PTE_U))
         panic("`%s' error: pn %u is wrong.", __func__, pn);
 
-    if ((pte & PTE_W) == PTE_W || (pte & PTE_COW) == PTE_COW)
+    if ((!(pte & PTE_SHARE) && (pte & PTE_W)) || (pte & PTE_COW))
     {
-        r = sys_page_map(0, addr, envid, addr, PTE_P | PTE_U | PTE_COW);
+        r = sys_page_map(0, addr, envid, addr,
+                         (pte & PTE_SYSCALL & ~PTE_W) | PTE_COW);
         if (r < 0)
             panic("`%s' error: %e.", __func__, r);
-        r = sys_page_map(0, addr, 0, addr, PTE_P | PTE_U | PTE_COW);
+        r = sys_page_map(0, addr, 0, addr,
+                         (pte & PTE_SYSCALL & ~PTE_W) | PTE_COW);
         if (r < 0)
             panic("`%s' error: %e.", __func__, r);
     }
     else
     {
-        r = sys_page_map(0, addr, envid, addr, PTE_P | PTE_U);
+        r = sys_page_map(0, addr, envid, addr, pte & PTE_SYSCALL);
         if (r < 0)
             panic("`%s' error: %e.", __func__, r);
     }
-    // LAB 4: Your code here.
     return 0;
 }
 
