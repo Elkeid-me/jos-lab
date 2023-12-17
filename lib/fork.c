@@ -75,7 +75,7 @@ static int duppage(envid_t envid, unsigned pn)
     if ((pte & (PTE_P | PTE_U)) != (PTE_P | PTE_U))
         panic("`%s' error: pn %u is wrong.", __func__, pn);
 
-    if ((!(pte & PTE_SHARE) && (pte & PTE_W)) || (pte & PTE_COW))
+    if (!(pte & PTE_SHARE) && ((pte & PTE_W) || (pte & PTE_COW)))
     {
         r = sys_page_map(0, addr, envid, addr,
                          (pte & PTE_SYSCALL & ~PTE_W) | PTE_COW);
