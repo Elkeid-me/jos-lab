@@ -73,7 +73,7 @@ struct Env {
 #endif
 }
 #ifdef Lab_4_Challenge_3
-// __attribute__((aligned(16)))
+__attribute__((aligned(16)))
 #endif
 ;
 

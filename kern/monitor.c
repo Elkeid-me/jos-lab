@@ -35,6 +35,8 @@ static struct Command commands[] = {
     {"help", "Display this list of commands", mon_help},
     {"kerninfo", "Display information about the kernel", mon_kerninfo},
     {"backtrace", "Backtrace the stack", mon_backtrace},
+    {"si", "Single instruction running", mon_si},
+    {"c", "Continue running", mon_c},
     {"color", "Change color", mon_color}};
 // clang-format off
 
