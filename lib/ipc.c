@@ -59,7 +59,7 @@ void ipc_send(envid_t to_env, uint32_t val, void *pg, int perm)
         }
         if (ret == 0)
             return;
-        panic("`%s' error: %e\n", __func__, ret);
+        panic("`%s' error: %e.", __func__, ret);
     }
 }
 

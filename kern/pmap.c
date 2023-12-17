@@ -121,7 +121,7 @@ static void *boot_alloc(uint32_t n)
     uint32_t expand_size = ROUNDUP(n, PGSIZE);
     if ((uint32_t)nextfree > (KERNBASE + PTSIZE) - expand_size)
     {
-        panic("`%s': out of memory\n", __func__);
+        panic("`%s': out of memory.", __func__);
         return NULL;
     }
     nextfree += expand_size;
@@ -703,7 +703,7 @@ void *mmio_map_region(physaddr_t pa, size_t size)
     size_t real_size = pa_end - pa_start;
 
     if (base + real_size > MMIOLIM || pa_end < pa)
-        panic("`%s': bigger than MMIOLIM.\n", __func__);
+        panic("`%s': bigger than MMIOLIM.", __func__);
 
     base += real_size;
 

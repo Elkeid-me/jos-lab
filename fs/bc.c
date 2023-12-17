@@ -52,16 +52,16 @@ static void bc_pgfault(struct UTrapframe *utf)
     addr = ROUNDDOWN(addr, PGSIZE);
     r = sys_page_alloc(0, addr, PTE_P | PTE_U | PTE_W);
     if (r < 0)
-        panic("`sys_page_alloc()` error: %e", r);
+        panic("`%s' error: %e.", __func__, r);
     r = ide_read(blockno * BLKSECTS, addr, BLKSECTS);
     if (r < 0)
-        panic("`ide_read()` error: %e", r);
+        panic("`%s' error: %e.", __func__, r);
 
     // Clear the dirty bit for the disk block page since we just read the
     // block from disk
     if ((r = sys_page_map(0, addr, 0, addr, uvpt[PGNUM(addr)] & PTE_SYSCALL)) <
         0)
-        panic("in bc_pgfault, sys_page_map: %e", r);
+        panic("in bc_pgfault, sys_page_map: %e.\n", r);
 
     // Check that the block we read was allocated. (exercise for
     // the reader: why do we do this *after* reading the block
@@ -91,10 +91,10 @@ void flush_block(void *addr)
 
     int ret = ide_write(blockno * BLKSECTS, addr, BLKSECTS);
     if (ret < 0)
-        panic("`ide_write()` error: %e", ret);
+        panic("`%s' error: %e.", __func__, ret);
     ret = sys_page_map(0, addr, 0, addr, uvpt[PGNUM(addr)] & PTE_SYSCALL);
     if (ret < 0)
-        panic("`sys_page_map()` error: %e", ret);
+        panic("`%s' error: %e.", __func__, ret);
 }
 // clang-format off
 // Test that the block cache works, by smashing the superblock and

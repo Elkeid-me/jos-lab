@@ -303,11 +303,11 @@ static void region_alloc(struct Env *e, void *va, size_t len)
     {
         struct PageInfo *pginfo_ptr = page_alloc(0);
         if (pginfo_ptr == NULL)
-            panic("`%s' error: Can not allocate a physical page.\n", __func__);
+            panic("`%s' error: Can not allocate a physical page.", __func__);
         int err = page_insert(e->env_pgdir, pginfo_ptr,
                               (void *)(p_down + i * PGSIZE), PTE_U | PTE_W);
         if (err < 0)
-            panic("`%s' error: %e\n", __func__, err);
+            panic("`%s' error: %e.", __func__, err);
     }
 }
 // clang-format off
@@ -367,7 +367,7 @@ static void load_icode(struct Env *e, uint8_t *binary)
     // LAB 3: Your code here.
     struct Elf *elf_header_ptr = (struct Elf *)binary;
     if (elf_header_ptr->e_magic != ELF_MAGIC)
-        panic("`%s' error: It's not a valid ELF file!\n", __func__);
+        panic("`%s' error: It's not a valid ELF file!", __func__);
 
     struct Proghdr *program_header_table_ptr =
         (struct Proghdr *)(binary + elf_header_ptr->e_phoff);
@@ -384,7 +384,7 @@ static void load_icode(struct Env *e, uint8_t *binary)
             size_t ph_off = program_header->p_offset;
             if (file_size > mem_size)
             {
-                panic("`%s' error: `filesz' is larger than `memsz'.\n",
+                panic("`%s' error: `filesz' is larger than `memsz'.",
                       __func__);
             }
             if (mem_size > 0)
@@ -419,7 +419,7 @@ void env_create(uint8_t *binary, enum EnvType type)
     struct Env *new_env = NULL;
     int err = env_alloc(&new_env, 0);
     if (err < 0)
-        panic("`%s' error: %e\n", __func__, err);
+        panic("`%s' error: %e.", __func__, err);
     load_icode(new_env, binary);
     new_env->env_parent_id = 0;
     new_env->env_type = type;

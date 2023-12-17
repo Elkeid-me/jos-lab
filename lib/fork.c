@@ -34,7 +34,7 @@ static void pgfault(struct UTrapframe *utf)
         (uvpt[PGNUM(addr)] & (PTE_P | PTE_U | PTE_COW)) !=
             (PTE_P | PTE_U | PTE_COW) ||
         (err & FEC_WR) != FEC_WR)
-        panic("`%s' error: addr %x is wrong.\n", __func__, addr);
+        panic("`%s' error: addr %x is wrong.", __func__, addr);
 
     // Allocate a new page, map it at a temporary location (PFTEMP),
     // copy the data from the old page to the new page, then move the new
@@ -45,15 +45,15 @@ static void pgfault(struct UTrapframe *utf)
     // LAB 4: Your code here.
     r = sys_page_alloc(0, PFTEMP, PTE_P | PTE_U | PTE_W);
     if (r < 0)
-        panic("`%s' error: %e\n", __func__, r);
+        panic("`%s' error: %e.", __func__, r);
     memcpy(PFTEMP, addr, PGSIZE);
 
     r = sys_page_map(0, PFTEMP, 0, addr, PTE_P | PTE_U | PTE_W);
     if (r < 0)
-        panic("`%s' error: %e\n", __func__, r);
+        panic("`%s' error: %e.", __func__, r);
     r = sys_page_unmap(0, PFTEMP);
     if (r < 0)
-        panic("`%s' error: %e\n", __func__, r);
+        panic("`%s' error: %e.", __func__, r);
 }
 
 //

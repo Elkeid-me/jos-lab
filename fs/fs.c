@@ -62,8 +62,10 @@ alloc_block(void)
 	// contains the in-use bits for BLKBITSIZE blocks.  There are
 	// super->s_nblocks blocks in the disk altogether.
 
-	// LAB 5: Your code here.
-	panic("alloc_block not implemented");
+    // LAB 5: Your code here.
+    if (!super)
+        panic("no super block");
+
 	return -E_NO_DISK;
 }
 
