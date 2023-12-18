@@ -73,7 +73,7 @@ static int duppage(envid_t envid, unsigned pn)
     pte_t pte = uvpt[pn];
     void *addr = (void *)(pn * PGSIZE);
     if ((pte & (PTE_P | PTE_U)) != (PTE_P | PTE_U))
-        panic("`%s' error: pn %u is wrong.", __func__, pn);
+        panic("`%s' error: pte of page %u is wrong.", __func__, pn);
 
     if (!(pte & PTE_SHARE) && ((pte & PTE_W) || (pte & PTE_COW)))
     {
@@ -121,12 +121,12 @@ envid_t fork(void)
 
     else if (fork_ret > 0)
     {
-        size_t page_addr = 0;
+        uintptr_t page_addr = 0;
         while (page_addr < UTOP - PGSIZE)
         {
             if ((uvpd[PDX(page_addr)] & (PTE_P | PTE_U)) != (PTE_P | PTE_U))
             {
-                page_addr += PGSIZE;
+                page_addr += PTSIZE;
                 continue;
             }
             if ((uvpt[PGNUM(page_addr)] & (PTE_P | PTE_U)) != (PTE_P | PTE_U))
@@ -142,13 +142,13 @@ envid_t fork(void)
         int ret = sys_page_alloc(fork_ret, (void *)(UXSTACKTOP - PGSIZE),
                                  PTE_P | PTE_U | PTE_W);
         if (ret < 0)
-            panic("1");
+            panic("`%s' error: %e.", __func__, ret);
         ret = sys_env_set_pgfault_upcall(fork_ret, thisenv->env_pgfault_upcall);
         if (ret < 0)
-            panic("2");
+            panic("`%s' error: %e.", __func__, ret);
         ret = sys_env_set_status(fork_ret, ENV_RUNNABLE);
         if (ret < 0)
-            panic("3");
+            panic("`%s' error: %e.", __func__, ret);
     }
 
     return fork_ret;

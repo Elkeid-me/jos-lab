@@ -543,9 +543,7 @@ static void boot_map_region_large_page(pde_t *pgdir, uintptr_t va, size_t size,
     }
     else
     {
-        panic("Call `%s' when large page is not "
-              "enabled.\n",
-              __func__);
+        panic("`%s' error: large page is not enabled.", __func__);
     }
 }
 // clang-format off
@@ -703,7 +701,8 @@ void *mmio_map_region(physaddr_t pa, size_t size)
     size_t real_size = pa_end - pa_start;
 
     if (base + real_size > MMIOLIM || pa_end < pa)
-        panic("`%s': bigger than MMIOLIM.", __func__);
+        panic("`%s' error: attemp to map an address higher than MMIOLIM.",
+              __func__);
 
     base += real_size;
 
