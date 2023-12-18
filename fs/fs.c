@@ -539,7 +539,6 @@ int buffer_alloc(void *ptr)
 {
     if (ptr < diskaddr(2))
         return 0;
-    cprintf("new block\n");
     if (n_buffer_used == N_BUFFER)
     {
         int r = buffer_evict();
