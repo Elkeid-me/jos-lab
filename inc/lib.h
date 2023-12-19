@@ -69,6 +69,24 @@ sys_exofork(void)
 	return ret;
 }
 
+// 非内联版本的 `sys_exofork`.
+// 如果要使用这个版本，请注释掉前面的内联版本，并在第 50 行的声明中去掉 `static`.
+//
+// 这个版本仅用于研究！
+// 除了 Lab 4 和 5 的测试样例外，没有经过其他测试！
+// 正常情况下请使用内联版本！
+// asm(".type sys_exofork, @function\n"
+//     "sys_exofork:\n"
+//     "\tmovl (%esp), %eax\n"
+//     "\tmovl %eax, -0x80(%esp)\n"
+//     "\tmovl $7, %eax\n"
+//     "\tint $48\n"
+//     "\tpush %eax\n"
+//     "\tmovl -0x7c(%esp), %eax\n"
+//     "\tmovl %eax, 0x4(%esp)\n"
+//     "\tpop %eax\n"
+//     "\tret\n");
+
 // ipc.c
 void	ipc_send(envid_t to_env, uint32_t value, void *pg, int perm);
 int32_t ipc_recv(envid_t *from_env_store, void *pg, int *perm_store);
