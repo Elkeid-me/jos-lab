@@ -33,10 +33,10 @@
 .set PROT_MODE_CSEG, 0x8	# kernel code segment selector
 .set PROT_MODE_DSEG, 0x10	# kernel data segment selector
 
-.code16           
+.code16
 .globl mpentry_start
 mpentry_start:
-	cli            
+	cli
 
 	xorw    %ax, %ax
 	movw    %ax, %ds
@@ -74,8 +74,10 @@ start32:
 	movl    $0x0, %ebp       # nuke frame pointer
 
 	# Call mp_main().  (Exercise for the reader: why the indirect call?)
+	# 整活：我已经实现了直接调用。具体见 `kernel.ld`
 	movl    $mp_main, %eax
 	call    *%eax
+	# call    true_mp_main
 
 	# If mp_main returns (it shouldn't), loop.
 spin:

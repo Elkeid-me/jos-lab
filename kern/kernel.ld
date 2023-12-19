@@ -13,6 +13,15 @@ SECTIONS
 	/* AT(...) gives the load address of this section, which tells
 	   the boot loader where to load the kernel in physical memory */
 	.text : AT(0x100000) {
+		/* 整活：mpentry 到 mp_main 的直接调用
+		   如果想要直接调用，请取消注释下面一行，
+		   注释掉 `mpentry.S` 中的
+		   `movl    $mp_main, %eax`
+		   `call    *%eax`
+		   两行，并取消注释
+		   `call    true_mp_main` */
+
+		/* PROVIDE(true_mp_main = mp_main + (0xF0100000 + mpentry_start - 0x7000)); */
 		*(.text .stub .text.* .gnu.linkonce.t.*)
 	}
 
