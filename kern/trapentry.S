@@ -81,7 +81,7 @@ TRAPHANDLER_NOEC(irq_spurious_h, IRQ_OFFSET + IRQ_SPURIOUS)
 TRAPHANDLER_NOEC(irq_ide_h, IRQ_OFFSET + IRQ_IDE)
 TRAPHANDLER_NOEC(irq_error_h, IRQ_OFFSET + IRQ_ERROR)
 
-.global fast_system_call
+.globl fast_system_call
 .type fast_system_call, @function
 .align 2
 fast_system_call:
