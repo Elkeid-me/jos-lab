@@ -24,6 +24,6 @@ Lab 框架位于 MIT 之存储库 [Index of /2018/jos.git](https://pdos.csail.mi
 - [Lab 2](https://elkeid-me.github.io/2023/10/22/OS-Lab-2/)
 - [Lab 3](https://elkeid-me.github.io/2023/11/05/OS-Lab-3/)
 - [Lab 4](https://elkeid-me.github.io/2023/11/26/OS-Lab-4/)
-- [Lab 4](https://elkeid-me.github.io/2023/12/17/OS-Lab-5/)
+- [Lab 5](https://elkeid-me.github.io/2023/12/17/OS-Lab-5/)
 
 推荐倒序阅读。
